@@ -1,2 +1,2 @@
-fastapi
-uvicorn 
+google-cloud-firestore
+python-dotenv

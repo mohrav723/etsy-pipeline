@@ -15,6 +15,7 @@ backend/.Python
 backend/env/
 backend/env.bak/
 backend/*.egg-info/
+backend/db.json
 
 # macOS
 .DS_Store
