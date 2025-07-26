@@ -1,7 +1,11 @@
 import React from 'react';
 import ArtReviewCard from './components/artReviewCard';
 
-// Updated mock job with all the new fields
+// Import Firestore functions and the db connection
+import { db } from './firebase'; 
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
+// Your mockJob can stay for now to keep the UI from being empty
 const mockJob = {
   id: 'job123',
   generatedImageUrl: 'https://placehold.co/600x400/223344/E0E0E0?text=Generated+Art',
@@ -11,15 +15,28 @@ const mockJob = {
   steps: 50,
   guidance: 3.5,
   safetyTolerance: 2,
-  seed: 12345,
-  generationCount: 1, // Starting at the first generation
+  seed: -1,
+  generationCount: 1,
   status: 'pending_review'
 };
 
-
 function App() {
-  const handleGenerateClick = () => {
-    console.log('New art generation process initiated!');
+  const handleGenerateClick = async () => {
+    try {
+      // This is the function that creates a new document in your 'jobs' collection
+      const docRef = await addDoc(collection(db, "jobs"), {
+        // We set the initial status to 'pending_prompt_generation'
+        // to trigger the first step of our backend worker.
+        status: 'pending_prompt_generation',
+        createdAt: serverTimestamp() // Adds a server-side timestamp
+      });
+      console.log("Successfully created job with ID: ", docRef.id);
+      alert("New art generation job has been submitted!");
+
+    } catch (e) {
+      console.error("Error adding document: ", e);
+      alert("Error submitting job. Check the console for details.");
+    }
   };
 
   return (
@@ -37,6 +54,7 @@ function App() {
       <hr style={{margin: '2rem 0', border: 'none', borderTop: '1px solid #eee'}} />
       <main>
         <h2 style={{textAlign: 'center', marginBottom: '1.5rem'}}>Art for Review</h2>
+        {/* The mock job is still here, but soon we will replace this with a real-time list */}
         {mockJob && <ArtReviewCard job={mockJob} />}
       </main>
     </div>
