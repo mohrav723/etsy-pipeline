@@ -22,22 +22,23 @@ const mockJob = {
 
 function App() {
   const handleGenerateClick = async () => {
+    const samplePrompt = "A quiet, forgotten corner of a Parisian library in late afternoon, shafts of golden sunlight streaming through a tall, arched window and illuminating dust motes dancing in the air, impressionist style.";
+    
     try {
-      // This is the function that creates a new document in your 'jobs' collection
-      const docRef = await addDoc(collection(db, "jobs"), {
-        // We set the initial status to 'pending_prompt_generation'
-        // to trigger the first step of our backend worker.
-        status: 'pending_prompt_generation',
-        createdAt: serverTimestamp() // Adds a server-side timestamp
+      await addDoc(collection(db, "jobs"), {
+        // Set the status the worker is listening for
+        status: 'pending_art_generation',
+        // Include the prompt directly
+        prompt: samplePrompt,
+        createdAt: serverTimestamp(),
+        aspectRatio: '16:9',
       });
-      console.log("Successfully created job with ID: ", docRef.id);
-      alert("New art generation job has been submitted!");
-
+      alert("Art generation job has been submitted!");
     } catch (e) {
       console.error("Error adding document: ", e);
-      alert("Error submitting job. Check the console for details.");
+      alert("Error submitting job.");
     }
-  };
+};
 
   return (
     <div style={{ maxWidth: '1000px', margin: '2rem auto', padding: '0 1rem', fontFamily: 'sans-serif' }}>

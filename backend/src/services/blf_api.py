@@ -10,13 +10,9 @@ if not BFL_API_KEY:
     raise ValueError("BFL_API_KEY not found in .env file.")
 
 def generate_art_image(prompt: str, width: int = 1024, height: int = 768) -> bytes:
-    """
-    Handles the full end-to-end process of generating an image with the BFL API,
-    including starting the job, polling for completion, and downloading the final image.
-    """
+
     print(f"--- Starting image generation for prompt: '{prompt[:50]}...'")
     
-    # 1. Start the generation job with the full payload
     start_url = "https://api.bfl.ai/v1/flux-dev"
     headers = {
         "x-key": BFL_API_KEY,
@@ -31,7 +27,7 @@ def generate_art_image(prompt: str, width: int = 1024, height: int = 768) -> byt
         "seed": -1,
         "guidance": 3,
         "safety_tolerance": 6,
-        "output_format": "png" # We want a PNG file at the end
+        "output_format": "png"
     }
 
     initial_response = requests.post(start_url, json=payload, headers=headers)
