@@ -35,6 +35,5 @@ def generate_art_image(prompt: str, width: int = 1024, height: int = 1024) -> by
     if response.status_code != 200:
         raise Exception(f"BFL API Error: {response.status_code} - {response.text}")
 
-    # print("--- Image data received successfully from BFL API.")
     print(response.json())
     return response.content
