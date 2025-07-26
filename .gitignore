@@ -4,6 +4,7 @@ frontend/dist/
 
 # TypeScript
 frontend/*.tsbuildinfo
+frontend/.env
 
 # Python
 backend/venv/

@@ -51,17 +51,31 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
   // Basic styles to make the card look better
   const styles = {
     card: { border: '1px solid #ddd', padding: '1.5rem', borderRadius: '8px', display: 'flex', gap: '2rem', background: '#f9f9f9' },
-    image: { width: '50%', objectFit: 'cover', borderRadius: '4px' },
+    image: { width: '50%', objectFit: 'contain', borderRadius: '4px', background: '#e0e0e0', alignSelf: 'flex-start' },
     controls: { width: '50%', display: 'flex', flexDirection: 'column', gap: '1rem' },
     label: { marginBottom: '-0.5rem', fontSize: '0.9rem', color: '#555' },
-    input: { width: '100%', padding: '8px', boxSizing: 'border-box' }, // The error is related to this line
+    input: { width: '100%', padding: '8px', boxSizing: 'border-box' },
     buttonContainer: { marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     generationCount: { fontSize: '0.8rem', color: '#777' }
-  } as const; // <--- ADD THIS 'as const' ASSERTION
+  } as const;
+
+  // Helper function to calculate the aspect ratio for CSS
+  const getAspectRatioValue = (ratio: string) => {
+    const [width, height] = ratio.split(':').map(Number);
+    return width / height;
+  }
 
   return (
     <div style={styles.card}>
-      <img src={job.generatedImageUrl} alt="AI generated art" style={styles.image} />
+      {/* The image tag now has its aspect-ratio set dynamically */}
+      <img 
+        src={job.generatedImageUrl} 
+        alt="AI generated art" 
+        style={{
+          ...styles.image,
+          aspectRatio: getAspectRatioValue(aspectRatio)
+        }} 
+      />
       
       <div style={styles.controls}>
         <div>
@@ -80,7 +94,8 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
             <option value="9:16">9:16 (Portrait)</option>
           </select>
         </div>
-
+        
+        {/* The rest of the controls remain the same... */}
         <div>
           <label style={styles.label}>Prompt</label>
           <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3} style={styles.input}/>
