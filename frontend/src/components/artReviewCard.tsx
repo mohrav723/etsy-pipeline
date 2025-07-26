@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { db } from '../firebase';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// Define the structure of a Job object with the new fields
-type Job = {
+// Export the Job type so other components can use it
+export type Job = {
   id: string;
   generatedImageUrl: string;
   prompt: string;
@@ -11,42 +13,57 @@ type Job = {
   guidance: number;
   safetyTolerance: number;
   seed: number;
+  promptUpsampling: boolean;
   generationCount: number;
 };
 
-// The props for our component will be a single job object
 type ArtReviewCardProps = {
   job: Job;
 };
 
 const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
-  // Use state to manage the form fields, initialized with the job's data
+  // State to manage the form fields, initialized with the job's data from Firestore
   const [prompt, setPrompt] = useState(job.prompt);
-  const [model, setModel] = useState(job.model);
   const [aspectRatio, setAspectRatio] = useState(job.aspectRatio);
   const [steps, setSteps] = useState(job.steps);
   const [guidance, setGuidance] = useState(job.guidance);
-  const [safetyTolerance, setSafetyTolerance] = useState(job.safetyTolerance);
   const [seed, setSeed] = useState(job.seed);
+  const [promptUpsampling, setPromptUpsampling] = useState(job.promptUpsampling);
+  const [safetyTolerance, setSafetyTolerance] = useState(job.safetyTolerance);
 
-  const handleRegenerate = () => {
-    // Placeholder: This will eventually update the Firestore document
-    console.log('Regenerating with new parameters:', {
-      ...job,
-      prompt,
-      model,
-      aspectRatio,
-      steps,
-      guidance,
-      safetyTolerance,
-      seed,
-    });
+  const handleRegenerate = async () => {
+    console.log(`Regenerating job ${job.id} with new parameters...`);
+    const jobRef = doc(db, 'jobs', job.id);
+
+    try {
+      // Update the document in Firestore with the new settings from the UI
+      await updateDoc(jobRef, {
+        status: 'pending_art_generation', // Set status back for the worker to pick it up
+        prompt,
+        aspectRatio,
+        steps,
+        guidance,
+        seed,
+        promptUpsampling,
+        safetyTolerance,
+      });
+      alert("Job has been submitted for regeneration!");
+    } catch (error) {
+      console.error("Error regenerating job:", error);
+      alert("Failed to submit for regeneration.");
+    }
   };
   
-  const handleApprove = () => {
-    // Placeholder: This will set the job status to 'approved'
-    console.log('Approving job:', job.id);
-  }
+  const handleApprove = async () => {
+    console.log(`Approving job ${job.id}...`);
+    const jobRef = doc(db, 'jobs', job.id);
+    try {
+        await updateDoc(jobRef, { status: 'approved' });
+        alert("Job approved! The final pipeline will now run.");
+    } catch (error) {
+        console.error("Error approving job:", error);
+    }
+  };
 
   // Basic styles to make the card look better
   const styles = {
@@ -78,14 +95,6 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
       />
       
       <div style={styles.controls}>
-        <div>
-          <label style={styles.label}>Model</label>
-          <select value={model} onChange={(e) => setModel(e.target.value)} style={styles.input}>
-            <option value="FLUX.1.1 [pro]">FLUX.1.1 [pro] ($0.04/image)</option>
-            <option value="FLUX.1.0 [schnell]">FLUX.1.0 [schnell]</option>
-          </select>
-        </div>
-
         <div>
           <label style={styles.label}>Aspect Ratio</label>
           <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} style={styles.input}>
@@ -119,6 +128,16 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
         <div>
           <label style={styles.label}>Seed</label>
           <input type="number" value={seed} onChange={(e) => setSeed(Number(e.target.value))} style={styles.input}/>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input 
+                type="checkbox" 
+                id="promptUpsampling" 
+                checked={promptUpsampling} 
+                onChange={(e) => setPromptUpsampling(e.target.checked)}
+            />
+            <label htmlFor="promptUpsampling" style={{ ...styles.label, marginBottom: 0 }}>Prompt Upsampling</label>
         </div>
         
         <div style={styles.buttonContainer}>

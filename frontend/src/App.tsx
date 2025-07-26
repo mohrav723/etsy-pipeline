@@ -1,63 +1,83 @@
-import React from 'react';
-import ArtReviewCard from './components/artReviewCard';
-
-// Import Firestore functions and the db connection
-import { db } from './firebase'; 
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-
-// Your mockJob can stay for now to keep the UI from being empty
-const mockJob = {
-  id: 'job123',
-  generatedImageUrl: 'https://placehold.co/600x400/223344/E0E0E0?text=Generated+Art',
-  prompt: 'A cozy, lamp-lit reading nook on a rainy night, impressionist style, visible brushstrokes.',
-  model: 'FLUX.1.1 [pro]',
-  aspectRatio: '16:9',
-  steps: 50,
-  guidance: 3.5,
-  safetyTolerance: 2,
-  seed: -1,
-  generationCount: 1,
-  status: 'pending_review'
-};
+import React, { useState, useEffect } from 'react';
+import ArtReviewCard, { Job } from './components/artReviewCard';
+import ControlPanel from './components/controlPanel';
+import { db } from './firebase';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 
 function App() {
-  const handleGenerateClick = async () => {
-    const samplePrompt = "A quiet, forgotten corner of a Parisian library in late afternoon, shafts of golden sunlight streaming through a tall, arched window and illuminating dust motes dancing in the air, impressionist style.";
+  // State to hold the list of jobs fetched from Firestore
+  const [reviewJobs, setReviewJobs] = useState<Job[]>([]);
+
+  // This useEffect hook sets up the real-time listener when the app loads
+  useEffect(() => {
+    // Reference to the 'jobs' collection in Firestore
+    const jobsCollection = collection(db, 'jobs');
     
-    try {
-      await addDoc(collection(db, "jobs"), {
-        // Set the status the worker is listening for
-        status: 'pending_art_generation',
-        // Include the prompt directly
-        prompt: samplePrompt,
-        createdAt: serverTimestamp(),
-        aspectRatio: '16:9',
+    // Create a query to only listen for documents where the status is 'pending_review'
+    const q = query(jobsCollection, where('status', '==', 'pending_review'));
+
+    // onSnapshot creates the real-time listener. This function will be called
+    // every time the query results change.
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const jobsFromFirestore: Job[] = [];
+      snapshot.forEach(doc => {
+        // Important: We cast the document data to our Job type
+        jobsFromFirestore.push({ id: doc.id, ...doc.data() } as Job);
       });
-      alert("Art generation job has been submitted!");
-    } catch (e) {
-      console.error("Error adding document: ", e);
-      alert("Error submitting job.");
-    }
-};
+      
+      console.log("Real-time update. Jobs for review:", jobsFromFirestore);
+      setReviewJobs(jobsFromFirestore);
+    });
+
+    // This is a cleanup function. It unsubscribes from the listener
+    // when the component is removed, preventing memory leaks.
+    return () => unsubscribe();
+  }, []); // The empty array [] means this effect runs only once on mount
+
+  // Apply the dark theme to the page
+  useEffect(() => {
+    document.body.style.backgroundColor = '#1a1a1a';
+    document.body.style.color = '#e0e0e0';
+  }, []);
+
+  const styles = {
+    app: { maxWidth: '1400px', margin: '2rem auto', padding: '0 2rem', fontFamily: 'system-ui, sans-serif' },
+    header: { paddingBottom: '1rem', borderBottom: '1px solid #333' },
+    title: { color: '#ffffff', fontWeight: 600, margin: 0 },
+    mainLayout: { display: 'flex', gap: '2rem', marginTop: '2rem' },
+    leftColumn: { width: '300px', flexShrink: 0 },
+    rightColumn: { flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' },
+    sectionTitle: { marginTop: 0, color: '#ffffff' },
+    noJobsMessage: { color: '#99aab5', textAlign: 'center', padding: '2rem', border: '2px dashed #40444b', borderRadius: '8px' }
+  } as const;
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '2rem auto', padding: '0 1rem', fontFamily: 'sans-serif' }}>
-      <header style={{ marginBottom: '2rem', textAlign: 'center' }}>
-        <h1>Etsy Pipeline Dashboard</h1>
-        <p>Click the button below to have AI generate a new art prompt and image for your review.</p>
-        <button 
-          onClick={handleGenerateClick}
-          style={{ padding: '15px 30px', fontSize: '1.2rem', cursor: 'pointer', border: 'none', background: '#007bff', color: 'white', borderRadius: '5px' }}
-        >
-          ✨ Generate New Art Idea
-        </button>
+    <div style={styles.app}>
+      <header style={styles.header}>
+        <h1 style={styles.title}>Etsy Pipeline Dashboard</h1>
       </header>
-      <hr style={{margin: '2rem 0', border: 'none', borderTop: '1px solid #eee'}} />
-      <main>
-        <h2 style={{textAlign: 'center', marginBottom: '1.5rem'}}>Art for Review</h2>
-        {/* The mock job is still here, but soon we will replace this with a real-time list */}
-        {mockJob && <ArtReviewCard job={mockJob} />}
-      </main>
+      
+      <div style={styles.mainLayout}>
+        <div style={styles.leftColumn}>
+          <ControlPanel />
+        </div>
+
+        <div style={styles.rightColumn}>
+          <h2 style={styles.sectionTitle}>Art for Review ({reviewJobs.length})</h2>
+          
+          {reviewJobs.length > 0 ? (
+            // Map over the real jobs from Firestore and render a card for each
+            reviewJobs.map(job => (
+              <ArtReviewCard key={job.id} job={job} />
+            ))
+          ) : (
+            <div style={styles.noJobsMessage}>
+              <p>No images are currently waiting for review.</p>
+              <p>Click "Generate New Art Idea" to start.</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
