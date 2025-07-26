@@ -7,7 +7,7 @@ from google.cloud import storage
 
 # --- THIS IS THE FIX ---
 # The '.' makes this a relative import, looking inside the 'src' package.
-from .services.blf_api import generate_art_image
+from .services.bfl_api import generate_art_image
 
 # --- Setup & Initialization ---
 load_dotenv()

@@ -2,7 +2,7 @@ import sys
 import os
 import uuid
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from src.services.blf_api import generate_art_image
+from src.services.bfl_api import generate_art_image
 
 def run_test():
 
