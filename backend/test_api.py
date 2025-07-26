@@ -10,6 +10,11 @@ def run_test():
     
     try:
         image_data = generate_art_image(prompt=sample_prompt, width=1344, height=768)
+        image_name = f"test_output_{uuid.uuid4()}.png"
+        with open(image_name, "wb") as f:
+            f.write(image_data)
+            
+        print(f"\n--- SUCCESS! Image saved as {image_name}. ---")
     except Exception as e:
         print(f"--- ERROR: The API call failed. Details: {e}")
 
