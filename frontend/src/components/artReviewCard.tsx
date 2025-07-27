@@ -16,13 +16,12 @@ import {
   Spin
 } from 'antd';
 import { 
-  CheckOutlined, 
   ReloadOutlined, 
   SettingOutlined,
   LoadingOutlined
 } from '@ant-design/icons';
 import { db } from '../firebase';
-import { doc, updateDoc, deleteDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import MockupButton from './MockupButton';
 
 const { Text } = Typography;
@@ -49,7 +48,6 @@ type ArtReviewCardProps = {
 
 const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [isApproving, setIsApproving] = useState(false);
   const [form] = Form.useForm();
   
   // Initialize form with current job values
@@ -110,22 +108,6 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
     }
   };
   
-  const handleApprove = async () => {
-    setIsApproving(true);
-    
-    console.log(`Approving job ${job.id}...`);
-    const jobRef = doc(db, 'jobs', job.id);
-    
-    try {
-      await updateDoc(jobRef, { status: 'approved' });
-      message.success('Image approved successfully!');
-    } catch (error: any) {
-      console.error("Error approving job:", error);
-      message.error(`Failed to approve: ${error.message || 'Unknown error'}`);
-    } finally {
-      setIsApproving(false);
-    }
-  };
 
 
   const parameterEditorItems = [
@@ -247,29 +229,17 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
           type="default"
           icon={isRegenerating ? <LoadingOutlined /> : <ReloadOutlined />}
           loading={isRegenerating}
-          disabled={isApproving}
           onClick={handleRegenerate}
           size="large"
         >
           {isRegenerating ? 'Regenerating...' : 'Regenerate'}
-        </Button>,
-        <Button
-          key="approve"
-          type="primary"
-          icon={isApproving ? <LoadingOutlined /> : <CheckOutlined />}
-          loading={isApproving}
-          disabled={isRegenerating}
-          onClick={handleApprove}
-          size="large"
-        >
-          {isApproving ? 'Approving...' : 'Approve'}
         </Button>,
         <MockupButton
           key="mockups"
           jobId={job.id}
           imageUrl={job.generatedImageUrl}
           prompt={job.prompt}
-          disabled={isRegenerating || isApproving}
+          disabled={isRegenerating}
         />,
       ]}
     >

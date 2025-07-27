@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, message } from 'antd';
 import { FileImageOutlined, LoadingOutlined } from '@ant-design/icons';
 import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp, query, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, getDocs, doc, updateDoc } from 'firebase/firestore';
 
 type MockupButtonProps = {
   jobId: string;
@@ -54,6 +54,16 @@ const MockupButton: React.FC<MockupButtonProps> = ({
 
       const docRef = await addDoc(collection(db, 'mockup_jobs'), mockupJobData);
       console.log(`Mockup generation job created with ID: ${docRef.id}`);
+      
+      // Auto-approve the image when generating mockups
+      try {
+        const jobRef = doc(db, 'jobs', jobId);
+        await updateDoc(jobRef, { status: 'approved' });
+        console.log(`Auto-approved job ${jobId} when generating mockups`);
+      } catch (approveError: any) {
+        console.warn(`Could not auto-approve job ${jobId}:`, approveError);
+        // Don't fail the whole operation if approval fails
+      }
       
       message.success(`Generating mockups with ${mockupsSnapshot.docs.length} template(s)...`);
       
