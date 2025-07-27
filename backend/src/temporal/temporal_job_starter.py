@@ -90,6 +90,12 @@ class TemporalJobStarter:
         job_data = doc_snapshot.to_dict()
         job_data['job_id'] = job_id  # Add job_id to data
         
+        # Convert Firestore timestamps to ISO strings for JSON serialization
+        if 'createdAt' in job_data and job_data['createdAt']:
+            job_data['createdAt'] = job_data['createdAt'].isoformat()
+        if 'updatedAt' in job_data and job_data['updatedAt']:
+            job_data['updatedAt'] = job_data['updatedAt'].isoformat()
+        
         print(f"\n🆕 New job detected: {job_id}")
         print(f"📝 Prompt: {job_data.get('prompt', 'No prompt')}")
         

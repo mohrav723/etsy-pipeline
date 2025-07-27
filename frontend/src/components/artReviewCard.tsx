@@ -169,7 +169,7 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
 
           <Form.Item label="Guidance" name="guidance">
             <Slider
-              min={1}
+              min={1.5}
               max={5}
               step={0.1}
               tooltip={{ formatter: (value) => `${value}` }}
