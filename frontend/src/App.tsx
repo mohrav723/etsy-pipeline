@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ArtReviewCard, { Job } from './components/artReviewCard';
 import ControlPanel from './components/controlPanel';
 import HistoryTab from './components/historyTab';
+import MockupTab from './components/MockupTab';
 import CostMonitoring from './components/CostMonitoring';
 import ErrorBoundary from './components/ErrorBoundary';
 import { db } from './firebase';
@@ -9,7 +10,7 @@ import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/f
 
 function App() {
   const [reviewJobs, setReviewJobs] = useState<Job[]>([]);
-  const [activeTab, setActiveTab] = useState<'review' | 'history' | 'costs'>('review');
+  const [activeTab, setActiveTab] = useState<'review' | 'history' | 'mockups' | 'costs'>('review');
 
   // Listen for only the most recent pending_review job
   useEffect(() => {
@@ -105,6 +106,15 @@ function App() {
               <button
                 style={{
                   ...styles.tab,
+                  ...(activeTab === 'mockups' ? styles.activeTab : {})
+                }}
+                onClick={() => setActiveTab('mockups')}
+              >
+                📱 Mockups
+              </button>
+              <button
+                style={{
+                  ...styles.tab,
                   ...(activeTab === 'costs' ? styles.activeTab : {})
                 }}
                 onClick={() => setActiveTab('costs')}
@@ -129,6 +139,8 @@ function App() {
                 )
               ) : activeTab === 'history' ? (
                 <HistoryTab />
+              ) : activeTab === 'mockups' ? (
+                <MockupTab />
               ) : (
                 <CostMonitoring />
               )}
