@@ -45,7 +45,6 @@ const ControlPanel = () => {
         safetyTolerance,
         seed: seed === -1 ? Math.floor(Math.random() * 1000000) : seed,
         promptUpsampling,
-        generationCount: 0,
       });
       
       setSuccessMessage(`Art generation job submitted successfully! Job ID: ${docRef.id.slice(0, 8)}...`);

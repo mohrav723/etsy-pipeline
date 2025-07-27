@@ -155,7 +155,6 @@ const HistoryTab = ({}: HistoryTabProps) => {
             />
             <div style={styles.imageInfo}>
               <div style={styles.prompt}>"{job.prompt}"</div>
-              <div>Generation #{job.generationCount}</div>
             </div>
           </div>
         ))}
@@ -204,10 +203,6 @@ const HistoryTab = ({}: HistoryTabProps) => {
               <span>{selectedJob.promptUpsampling ? 'Yes' : 'No'}</span>
             </div>
             
-            <div style={styles.detailRow}>
-              <span style={styles.detailLabel}>Generation Count:</span>
-              <span>{selectedJob.generationCount}</span>
-            </div>
           </div>
         </div>
       )}
