@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import ArtReviewCard, { Job } from './components/artReviewCard';
 import ControlPanel from './components/controlPanel';
 import HistoryTab from './components/historyTab';
+import CostMonitoring from './components/CostMonitoring';
 import ErrorBoundary from './components/ErrorBoundary';
 import { db } from './firebase';
 import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
 
 function App() {
   const [reviewJobs, setReviewJobs] = useState<Job[]>([]);
-  const [activeTab, setActiveTab] = useState<'review' | 'history'>('review');
+  const [activeTab, setActiveTab] = useState<'review' | 'history' | 'costs'>('review');
 
   // Listen for only the most recent pending_review job
   useEffect(() => {
@@ -101,6 +102,15 @@ function App() {
               >
                 History
               </button>
+              <button
+                style={{
+                  ...styles.tab,
+                  ...(activeTab === 'costs' ? styles.activeTab : {})
+                }}
+                onClick={() => setActiveTab('costs')}
+              >
+                💰 Costs
+              </button>
             </div>
 
             <ErrorBoundary>
@@ -117,8 +127,10 @@ function App() {
                     <p>Use the form on the left to generate new art.</p>
                   </div>
                 )
-              ) : (
+              ) : activeTab === 'history' ? (
                 <HistoryTab />
+              ) : (
+                <CostMonitoring />
               )}
             </ErrorBoundary>
           </div>

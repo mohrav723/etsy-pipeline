@@ -79,7 +79,25 @@ python create_test_job.py
 4. **Image Generation**: The worker (`temporal_worker.py`) processes workflows by:
    - Generating images using the BFL API
    - Uploading to Firebase Storage
+   - Logging costs for both BFL API and Google Storage
    - Updating job status in Firestore
+
+## Cost Monitoring
+
+The system automatically tracks costs for:
+- **BFL API**: Per-image generation costs (varies by model and steps)
+- **Google Cloud Storage**: Storage and operation costs
+
+### Viewing Costs
+- **Frontend**: Click the "💰 Costs" tab to see real-time cost breakdowns
+- **Command Line**: Run `python get_cost_summary.py` for detailed cost reports
+- **JSON API**: Use `python get_cost_summary.py --json` for programmatic access
+
+### Cost Data
+- All costs are stored in Firestore `costs` collection
+- Real-time updates in the frontend
+- 7-day, 30-day, and monthly estimates
+- Per-job cost tracking
 
 ## Stopping the Application
 
