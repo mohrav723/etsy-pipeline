@@ -6,7 +6,6 @@ This project is structured as a monorepo with a TypeScript + Vite frontend and a
 
 - `frontend/` - Vite + TypeScript React app
 - `backend/`  - Python backend with Temporal workflows for image generation
-- `temporal-service/` - Alternative Temporal service implementation
 
 ## Prerequisites
 

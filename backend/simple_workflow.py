@@ -41,7 +41,7 @@ async def generate_and_store_image(job_data: Dict[str, Any]) -> str:
     
     # Import your existing services
     from src.services.bfl_api import generate_art_image
-    from src.worker import upload_image_to_storage
+    from src.storage import upload_image_to_storage
     
     activity.logger.info(f"Generating image for job {job_data['job_id']}")
     

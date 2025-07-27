@@ -2,3 +2,4 @@ google-cloud-firestore
 python-dotenv
 google-cloud-storage
 requests
+temporalio

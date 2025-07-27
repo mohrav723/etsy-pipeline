@@ -35,7 +35,7 @@ sleep 5
 # Start backend worker
 echo "2️⃣ Starting Temporal worker..."
 cd backend
-python temporal_worker.py > temporal_worker.log 2>&1 &
+source venv/bin/activate && python temporal_worker.py > temporal_worker.log 2>&1 &
 WORKER_PID=$!
 
 # Wait a moment for worker to start
@@ -43,7 +43,7 @@ sleep 2
 
 # Start job starter
 echo "3️⃣ Starting job starter (Firestore listener)..."
-python temporal_job_starter.py > temporal_job_starter.log 2>&1 &
+source venv/bin/activate && python temporal_job_starter.py > temporal_job_starter.log 2>&1 &
 JOB_STARTER_PID=$!
 
 # Wait a moment for job starter to start
