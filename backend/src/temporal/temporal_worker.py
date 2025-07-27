@@ -13,6 +13,14 @@ if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
 from src.temporal.simple_workflow import SimpleImageWorkflow, generate_and_store_image, update_firestore_job
+from src.temporal.mockup_generation_workflow import (
+    MockupGenerationWorkflow, 
+    get_available_mockups, 
+    create_draft_entry, 
+    generate_mockup_image, 
+    update_draft_with_mockup, 
+    mark_draft_failed
+)
 
 async def main():
     # Connect to Temporal server
@@ -22,8 +30,16 @@ async def main():
     worker = Worker(
         client,
         task_queue="image-generation-queue",
-        workflows=[SimpleImageWorkflow],
-        activities=[generate_and_store_image, update_firestore_job],
+        workflows=[SimpleImageWorkflow, MockupGenerationWorkflow],
+        activities=[
+            generate_and_store_image, 
+            update_firestore_job,
+            get_available_mockups,
+            create_draft_entry,
+            generate_mockup_image,
+            update_draft_with_mockup,
+            mark_draft_failed
+        ],
     )
     
     print("🚀 Temporal worker started - listening for image generation jobs...")

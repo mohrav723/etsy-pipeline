@@ -3,3 +3,4 @@ python-dotenv
 google-cloud-storage
 requests
 temporalio
+Pillow

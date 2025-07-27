@@ -15,6 +15,7 @@ if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
 from src.temporal.simple_workflow import SimpleImageWorkflow
+from src.temporal.mockup_generation_workflow import MockupGenerationWorkflow
 
 # Load environment variables like your current worker
 load_dotenv()
@@ -39,15 +40,20 @@ class TemporalJobStarter:
             print("💡 Make sure Temporal server is running!")
             return
         
-        # Set up Firestore listener
-        collection_ref = self.db.collection('jobs')
-        query_ref = collection_ref.where('status', '==', 'pending_art_generation')
+        # Set up Firestore listeners
+        # Listen for jobs
+        jobs_collection_ref = self.db.collection('jobs')
+        jobs_query_ref = jobs_collection_ref.where('status', '==', 'pending_art_generation')
+        jobs_query_ref.on_snapshot(self.handle_job_changes)
         
-        # Start listening for new jobs
-        query_ref.on_snapshot(self.handle_job_changes)
+        # Listen for mockup jobs
+        mockup_jobs_collection_ref = self.db.collection('mockup_jobs')
+        mockup_jobs_query_ref = mockup_jobs_collection_ref.where('status', '==', 'pending_mockup_generation')
+        mockup_jobs_query_ref.on_snapshot(self.handle_mockup_changes)
         
         print("🔥 Listening for Firestore changes...")
         print("📋 Watching for jobs with status: 'pending_art_generation'")
+        print("🎨 Watching for mockup_jobs with status: 'pending_mockup_generation'")
         print("🌐 Temporal UI: http://localhost:8080")
         print("🛑 Press Ctrl+C to stop")
         
@@ -59,12 +65,22 @@ class TemporalJobStarter:
             print("\n🛑 Shutting down...")
     
     def handle_job_changes(self, collection_snapshot, changes, read_time):
-        """Handle Firestore changes - same as your current callback"""
+        """Handle Firestore job changes"""
         for change in changes:
             if change.type.name == 'ADDED':
                 # Schedule the async task in the main event loop
                 asyncio.run_coroutine_threadsafe(
                     self.process_job(change.document),
+                    self.loop
+                )
+    
+    def handle_mockup_changes(self, collection_snapshot, changes, read_time):
+        """Handle Firestore mockup job changes"""
+        for change in changes:
+            if change.type.name == 'ADDED':
+                # Schedule the async task in the main event loop
+                asyncio.run_coroutine_threadsafe(
+                    self.process_mockup_job(change.document),
                     self.loop
                 )
     
@@ -102,6 +118,56 @@ class TemporalJobStarter:
                 print(f"📝 Updated job {job_id} with error status")
             except Exception as update_error:
                 print(f"❌ Failed to update job error status: {update_error}")
+    
+    async def process_mockup_job(self, doc_snapshot):
+        """Process a mockup job by starting a Temporal mockup generation workflow"""
+        mockup_job_id = doc_snapshot.id
+        mockup_job_data = doc_snapshot.to_dict()
+        
+        # Prepare data for the mockup generation workflow
+        workflow_data = {
+            'source_job_id': mockup_job_data.get('sourceJobId'),
+            'source_image_url': mockup_job_data.get('sourceImageUrl'),
+            'source_prompt': mockup_job_data.get('sourcePrompt', ''),
+            'mockup_job_id': mockup_job_id
+        }
+        
+        print(f"\n🎨 New mockup job detected: {mockup_job_id}")
+        print(f"📝 Source Job: {workflow_data['source_job_id']}")
+        
+        try:
+            # Start the mockup generation workflow
+            handle = await self.temporal_client.start_workflow(
+                MockupGenerationWorkflow.run,
+                workflow_data,
+                id=f"mockup-gen-{mockup_job_id}",  # Unique workflow ID
+                task_queue="image-generation-queue",
+            )
+            
+            print(f"✅ Mockup generation workflow started: {handle.id}")
+            print(f"🔗 View progress: http://localhost:8080/namespaces/default/workflows/{handle.id}")
+            
+            # Update mockup job status to processing
+            try:
+                mockup_job_ref = self.db.collection('mockup_jobs').document(mockup_job_id)
+                mockup_job_ref.update({'status': 'processing'})
+                print(f"📝 Updated mockup job {mockup_job_id} to processing")
+            except Exception as update_error:
+                print(f"⚠️ Failed to update mockup job status: {update_error}")
+            
+        except Exception as e:
+            print(f"❌ Failed to start mockup workflow for {mockup_job_id}: {e}")
+            
+            # Update mockup job with error
+            try:
+                mockup_job_ref = self.db.collection('mockup_jobs').document(mockup_job_id)
+                mockup_job_ref.update({
+                    'status': 'failed',
+                    'errorMessage': f"Failed to start workflow: {str(e)}"
+                })
+                print(f"📝 Updated mockup job {mockup_job_id} with error status")
+            except Exception as update_error:
+                print(f"❌ Failed to update mockup job error status: {update_error}")
 
 async def main():
     starter = TemporalJobStarter()

@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import { ConfigProvider, Layout, Typography, Tabs, Empty, Card, Spin } from 'antd';
+import { GenerationProvider, useGeneration } from './context/GenerationContext';
+import { PictureOutlined, HistoryOutlined, MobileOutlined, DollarCircleOutlined, FileImageOutlined } from '@ant-design/icons';
 import ArtReviewCard, { Job } from './components/artReviewCard';
 import ControlPanel from './components/controlPanel';
 import HistoryTab from './components/historyTab';
 import MockupTab from './components/MockupTab';
+import DraftsTab from './components/DraftsTab';
 import CostMonitoring from './components/CostMonitoring';
 import ErrorBoundary from './components/ErrorBoundary';
 import { db } from './firebase';
 import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
+import { antdDarkTheme } from './theme/antdTheme';
+import 'antd/dist/reset.css';
 
-function App() {
+const { Header, Content, Sider } = Layout;
+const { Title, Text } = Typography;
+
+function AppContent() {
+  const { isGenerating, setIsGenerating } = useGeneration();
   const [reviewJobs, setReviewJobs] = useState<Job[]>([]);
-  const [activeTab, setActiveTab] = useState<'review' | 'history' | 'mockups' | 'costs'>('review');
+  const [activeTab, setActiveTab] = useState<'review' | 'history' | 'mockups' | 'drafts' | 'costs'>('review');
 
   // Listen for only the most recent pending_review job
   useEffect(() => {
@@ -32,10 +42,15 @@ function App() {
       
       console.log("Latest job for review:", jobsFromFirestore);
       setReviewJobs(jobsFromFirestore);
+      
+      // Clear loading state when a new job appears for review
+      if (jobsFromFirestore.length > 0) {
+        setIsGenerating(false);
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isGenerating, setIsGenerating]);
 
   // Apply the dark theme to the page
   useEffect(() => {
@@ -43,112 +58,173 @@ function App() {
     document.body.style.color = '#e0e0e0';
   }, []);
 
-  const styles = {
-    app: { maxWidth: '1400px', margin: '2rem auto', padding: '0 2rem', fontFamily: 'system-ui, sans-serif' },
-    header: { paddingBottom: '1rem', borderBottom: '1px solid #333' },
-    title: { color: '#ffffff', fontWeight: 600, margin: 0 },
-    mainLayout: { display: 'flex', gap: '2rem', marginTop: '2rem' },
-    leftColumn: { width: '300px', flexShrink: 0 },
-    rightColumn: { flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' },
-    sectionTitle: { marginTop: 0, color: '#ffffff' },
-    noJobsMessage: { color: '#99aab5', textAlign: 'center', padding: '2rem', border: '2px dashed #40444b', borderRadius: '8px' },
-    tabContainer: { display: 'flex', gap: '0.5rem', marginBottom: '1rem' },
-    tab: {
-      padding: '0.75rem 1.5rem',
-      border: '1px solid #40444b',
-      borderRadius: '8px 8px 0 0',
-      backgroundColor: '#1a1a1a',
-      color: '#99aab5',
-      cursor: 'pointer',
-      fontWeight: 'bold'
+  const tabItems = [
+    {
+      key: 'review',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <PictureOutlined />
+          Review ({reviewJobs.length})
+        </span>
+      ),
+      children: (
+        <>
+          {isGenerating && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px', marginBottom: '16px' }}>
+              <Card style={{ width: '100%', textAlign: 'center' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  gap: '16px',
+                  padding: '40px'
+                }}>
+                  <Spin size="large" />
+                  <Text style={{ color: '#b9bbbe', fontSize: '16px' }}>
+                    Generating your image...
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: '14px' }}>
+                    This may take a few moments
+                  </Text>
+                </div>
+              </Card>
+            </div>
+          )}
+          
+          {reviewJobs.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '4px 0' }}>
+              {reviewJobs.map(job => (
+                <ErrorBoundary key={job.id}>
+                  <ArtReviewCard job={job} />
+                </ErrorBoundary>
+              ))}
+            </div>
+          ) : !isGenerating ? (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="No images are currently waiting for review. Use the form on the left to generate new art."
+              style={{ color: '#99aab5' }}
+            />
+          ) : null}
+        </>
+      ),
     },
-    activeTab: {
-      backgroundColor: '#23272a',
-      color: '#ffffff',
-      borderBottomColor: '#23272a'
-    }
-  } as const;
+    {
+      key: 'history',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <HistoryOutlined />
+          History
+        </span>
+      ),
+      children: <HistoryTab />,
+    },
+    {
+      key: 'mockups',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <MobileOutlined />
+          Mockups
+        </span>
+      ),
+      children: <MockupTab />,
+    },
+    {
+      key: 'drafts',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <FileImageOutlined />
+          Drafts
+        </span>
+      ),
+      children: <DraftsTab />,
+    },
+    {
+      key: 'costs',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <DollarCircleOutlined />
+          Costs
+        </span>
+      ),
+      children: <CostMonitoring />,
+    },
+  ];
 
   return (
-    <ErrorBoundary>
-      <div style={styles.app}>
-        <header style={styles.header}>
-          <h1 style={styles.title}>Etsy Pipeline Dashboard</h1>
-        </header>
-        
-        <div style={styles.mainLayout}>
-          <div style={styles.leftColumn}>
-            <ErrorBoundary>
-              <ControlPanel />
-            </ErrorBoundary>
-          </div>
+    <ConfigProvider theme={antdDarkTheme}>
+      <ErrorBoundary>
+        <Layout style={{ height: '100vh', overflow: 'hidden' }}>
+          <Header style={{ 
+            padding: '0 32px', 
+            borderBottom: '1px solid #40444b',
+            height: '60px',
+            lineHeight: 'normal',
+            display: 'flex',
+            alignItems: 'center',
+            flexShrink: 0
+          }}>
+            <Title 
+              level={1} 
+              style={{ 
+                color: '#ffffff', 
+                margin: 0, 
+                lineHeight: '1.2',
+                fontSize: '24px'
+              }}
+            >
+              Etsy Pipeline Dashboard
+            </Title>
+          </Header>
+          
+          <Layout>
+            <Sider 
+              width={360} 
+              style={{ 
+                background: '#23272a',
+                padding: '16px',
+                borderRight: '1px solid #40444b',
+                overflow: 'auto',
+                height: 'calc(100vh - 60px)',
+                flexShrink: 0
+              }}
+            >
+              <ErrorBoundary>
+                <ControlPanel />
+              </ErrorBoundary>
+            </Sider>
+            
+            <Content style={{ 
+              padding: '20px', 
+              background: '#1a1a1a',
+              overflow: 'auto',
+              height: 'calc(100vh - 60px)',
+              display: 'flex',
+              flexDirection: 'column' 
+            }}>
+              <ErrorBoundary>
+                <Tabs
+                  activeKey={activeTab}
+                  onChange={(key) => setActiveTab(key as 'review' | 'history' | 'mockups' | 'drafts' | 'costs')}
+                  items={tabItems}
+                  size="large"
+                  style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                  tabBarStyle={{ flexShrink: 0, marginBottom: '16px' }}
+                />
+              </ErrorBoundary>
+            </Content>
+          </Layout>
+        </Layout>
+      </ErrorBoundary>
+    </ConfigProvider>
+  );
+}
 
-          <div style={styles.rightColumn}>
-            <div style={styles.tabContainer}>
-              <button
-                style={{
-                  ...styles.tab,
-                  ...(activeTab === 'review' ? styles.activeTab : {})
-                }}
-                onClick={() => setActiveTab('review')}
-              >
-                Review ({reviewJobs.length})
-              </button>
-              <button
-                style={{
-                  ...styles.tab,
-                  ...(activeTab === 'history' ? styles.activeTab : {})
-                }}
-                onClick={() => setActiveTab('history')}
-              >
-                History
-              </button>
-              <button
-                style={{
-                  ...styles.tab,
-                  ...(activeTab === 'mockups' ? styles.activeTab : {})
-                }}
-                onClick={() => setActiveTab('mockups')}
-              >
-                📱 Mockups
-              </button>
-              <button
-                style={{
-                  ...styles.tab,
-                  ...(activeTab === 'costs' ? styles.activeTab : {})
-                }}
-                onClick={() => setActiveTab('costs')}
-              >
-                💰 Costs
-              </button>
-            </div>
-
-            <ErrorBoundary>
-              {activeTab === 'review' ? (
-                reviewJobs.length > 0 ? (
-                  reviewJobs.map(job => (
-                    <ErrorBoundary key={job.id}>
-                      <ArtReviewCard job={job} />
-                    </ErrorBoundary>
-                  ))
-                ) : (
-                  <div style={styles.noJobsMessage}>
-                    <p>No images are currently waiting for review.</p>
-                    <p>Use the form on the left to generate new art.</p>
-                  </div>
-                )
-              ) : activeTab === 'history' ? (
-                <HistoryTab />
-              ) : activeTab === 'mockups' ? (
-                <MockupTab />
-              ) : (
-                <CostMonitoring />
-              )}
-            </ErrorBoundary>
-          </div>
-        </div>
-      </div>
-    </ErrorBoundary>
+function App() {
+  return (
+    <GenerationProvider>
+      <AppContent />
+    </GenerationProvider>
   );
 }
 
