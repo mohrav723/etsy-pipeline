@@ -29,7 +29,7 @@ def auto_cleanup():
     cutoff_time = datetime.now() - timedelta(minutes=20)
     
     drafts_collection = db.collection('drafts')
-    processing_drafts = drafts_collection.where('status', '==', 'processing').get()
+    processing_drafts = drafts_collection.where(filter=firestore.FieldFilter('status', '==', 'processing')).get()
     
     stuck_drafts = 0
     for draft_doc in processing_drafts:
@@ -62,7 +62,7 @@ def auto_cleanup():
     cutoff_time = datetime.now() - timedelta(minutes=30)
     
     mockup_jobs_collection = db.collection('mockup_jobs')
-    processing_jobs = mockup_jobs_collection.where('status', '==', 'processing').get()
+    processing_jobs = mockup_jobs_collection.where(filter=firestore.FieldFilter('status', '==', 'processing')).get()
     
     stuck_jobs = 0
     for job_doc in processing_jobs:
@@ -94,7 +94,7 @@ def auto_cleanup():
     print("🔍 Checking for old pending mockup jobs...")
     cutoff_time = datetime.now() - timedelta(hours=1)
     
-    pending_jobs = mockup_jobs_collection.where('status', '==', 'pending_mockup_generation').get()
+    pending_jobs = mockup_jobs_collection.where(filter=firestore.FieldFilter('status', '==', 'pending_mockup_generation')).get()
     
     old_pending = 0
     for job_doc in pending_jobs:

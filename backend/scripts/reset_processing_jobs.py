@@ -22,7 +22,7 @@ def reset_processing_jobs():
     db = firestore.Client()
     
     # Find processing mockup jobs
-    mockup_jobs = db.collection('mockup_jobs').where('status', '==', 'processing').get()
+    mockup_jobs = db.collection('mockup_jobs').where(filter=firestore.FieldFilter('status', '==', 'processing')).get()
     
     reset_count = 0
     for job_doc in mockup_jobs:

@@ -43,12 +43,12 @@ class TemporalJobStarter:
         # Set up Firestore listeners
         # Listen for jobs
         jobs_collection_ref = self.db.collection('jobs')
-        jobs_query_ref = jobs_collection_ref.where('status', '==', 'pending_art_generation')
+        jobs_query_ref = jobs_collection_ref.where(filter=firestore.FieldFilter('status', '==', 'pending_art_generation'))
         jobs_query_ref.on_snapshot(self.handle_job_changes)
         
         # Listen for mockup jobs
         mockup_jobs_collection_ref = self.db.collection('mockup_jobs')
-        mockup_jobs_query_ref = mockup_jobs_collection_ref.where('status', '==', 'pending_mockup_generation')
+        mockup_jobs_query_ref = mockup_jobs_collection_ref.where(filter=firestore.FieldFilter('status', '==', 'pending_mockup_generation'))
         mockup_jobs_query_ref.on_snapshot(self.handle_mockup_changes)
         
         print("🔥 Listening for Firestore changes...")

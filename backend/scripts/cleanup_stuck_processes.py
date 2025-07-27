@@ -28,7 +28,7 @@ def cleanup_stuck_drafts():
     cutoff_time = datetime.now() - timedelta(minutes=30)
     
     # Query for processing drafts
-    processing_drafts = drafts_collection.where('status', '==', 'processing').get()
+    processing_drafts = drafts_collection.where(filter=firestore.FieldFilter('status', '==', 'processing')).get()
     
     stuck_count = 0
     for draft_doc in processing_drafts:
@@ -66,7 +66,7 @@ def cleanup_stuck_mockup_jobs():
     cutoff_time = datetime.now() - timedelta(minutes=30)
     
     # Query for processing mockup jobs
-    processing_jobs = mockup_jobs_collection.where('status', '==', 'processing').get()
+    processing_jobs = mockup_jobs_collection.where(filter=firestore.FieldFilter('status', '==', 'processing')).get()
     
     stuck_count = 0
     for job_doc in processing_jobs:

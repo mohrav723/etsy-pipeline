@@ -161,7 +161,7 @@ class CostTracker:
         
         # Query costs
         costs_ref = self.db.collection('costs')
-        costs_query = costs_ref.where('timestamp', '>=', start_date).where('timestamp', '<=', end_date)
+        costs_query = costs_ref.where(filter=firestore.FieldFilter('timestamp', '>=', start_date)).where(filter=firestore.FieldFilter('timestamp', '<=', end_date))
         
         bfl_total = 0
         storage_total = 0
