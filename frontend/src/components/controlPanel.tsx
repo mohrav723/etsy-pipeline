@@ -135,6 +135,9 @@ const ControlPanel = () => {
 
       <div style={styles.formGroup}>
         <label style={styles.label}>Steps: {steps}</label>
+        <p style={{...styles.subtitle, margin: '0 0 0.5rem 0', fontSize: '0.8rem'}}>
+          More steps = better quality, but slower generation
+        </p>
         <input
           type="range"
           min="0"
@@ -147,6 +150,9 @@ const ControlPanel = () => {
 
       <div style={styles.formGroup}>
         <label style={styles.label}>Guidance: {guidance}</label>
+        <p style={{...styles.subtitle, margin: '0 0 0.5rem 0', fontSize: '0.8rem'}}>
+        High guidance scales improve prompt adherence at the cost of reduced realism
+        </p>
         <input
           type="range"
           min="1.5"
@@ -173,6 +179,9 @@ const ControlPanel = () => {
 
       <div style={styles.formGroup}>
         <label style={styles.label}>Seed</label>
+        <p style={{...styles.subtitle, margin: '0 0 0.5rem 0', fontSize: '0.8rem'}}>
+          Use -1 for random, or specific number for reproducible results
+        </p>
         <input
           type="number"
           value={seed}
