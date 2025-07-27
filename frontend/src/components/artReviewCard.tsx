@@ -22,7 +22,14 @@ type ArtReviewCardProps = {
 };
 
 const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const handleRegenerate = async () => {
+    setError(null);
+    setIsRegenerating(true);
+    
     console.log(`Regenerating job ${job.id}...`);
     const jobRef = doc(db, 'jobs', job.id);
 
@@ -30,21 +37,30 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
       await updateDoc(jobRef, {
         status: 'pending_art_generation',
       });
-      alert("Job has been submitted for regeneration!");
-    } catch (error) {
+      // Note: Don't alert here as the card will disappear from review
+    } catch (error: any) {
       console.error("Error regenerating job:", error);
-      alert("Failed to submit for regeneration.");
+      setError(`Failed to regenerate: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsRegenerating(false);
     }
   };
   
   const handleApprove = async () => {
+    setError(null);
+    setIsApproving(true);
+    
     console.log(`Approving job ${job.id}...`);
     const jobRef = doc(db, 'jobs', job.id);
+    
     try {
-        await updateDoc(jobRef, { status: 'approved' });
-        alert("Job approved! The final pipeline will now run.");
-    } catch (error) {
-        console.error("Error approving job:", error);
+      await updateDoc(jobRef, { status: 'approved' });
+      // Note: Don't alert here as the card will disappear from review
+    } catch (error: any) {
+      console.error("Error approving job:", error);
+      setError(`Failed to approve: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsApproving(false);
     }
   };
 
@@ -90,6 +106,20 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
     regenerateButton: {
       backgroundColor: '#5865f2',
       color: '#fff'
+    },
+    buttonDisabled: {
+      opacity: 0.6,
+      cursor: 'not-allowed'
+    },
+    errorMessage: {
+      backgroundColor: '#ed424520',
+      color: '#ed4245',
+      border: '1px solid #ed424540',
+      padding: '8px',
+      borderRadius: '4px',
+      fontSize: '0.8rem',
+      textAlign: 'center' as const,
+      margin: '8px 0'
     }
   } as const;
 
@@ -99,25 +129,45 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
         src={job.generatedImageUrl} 
         alt="AI generated art" 
         style={styles.image}
+        onError={() => {
+          console.error('Failed to load image:', job.generatedImageUrl);
+          setError('Failed to load image');
+        }}
       />
       
       <div style={styles.info}>
         <p>"{job.prompt}"</p>
         <p>Generation #{job.generationCount}</p>
       </div>
+
+      {error && (
+        <div style={styles.errorMessage}>
+          ❌ {error}
+        </div>
+      )}
       
       <div style={styles.buttonContainer}>
         <button 
-          onClick={handleRegenerate} 
-          style={{...styles.button, ...styles.regenerateButton}}
+          onClick={handleRegenerate}
+          disabled={isRegenerating || isApproving}
+          style={{
+            ...styles.button, 
+            ...styles.regenerateButton,
+            ...(isRegenerating || isApproving ? styles.buttonDisabled : {})
+          }}
         >
-          🔄 Regenerate
+          {isRegenerating ? '🔄 Regenerating...' : '🔄 Regenerate'}
         </button>
         <button 
-          onClick={handleApprove} 
-          style={{...styles.button, ...styles.approveButton}}
+          onClick={handleApprove}
+          disabled={isRegenerating || isApproving}
+          style={{
+            ...styles.button, 
+            ...styles.approveButton,
+            ...(isRegenerating || isApproving ? styles.buttonDisabled : {})
+          }}
         >
-          ✅ Approve
+          {isApproving ? '⏳ Approving...' : '✅ Approve'}
         </button>
       </div>
     </div>

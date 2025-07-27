@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import JobStatus from './JobStatus';
 
 const ControlPanel = () => {
   const [prompt, setPrompt] = useState('');
@@ -10,16 +11,31 @@ const ControlPanel = () => {
   const [safetyTolerance, setSafetyTolerance] = useState(2);
   const [seed, setSeed] = useState(42);
   const [promptUpsampling, setPromptUpsampling] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleGenerateClick = async () => {
+    // Clear previous messages
+    setError(null);
+    setSuccessMessage(null);
+
+    // Validation
     if (!prompt.trim()) {
-      alert("Please enter a prompt before generating.");
+      setError("Please enter a prompt before generating.");
       return;
     }
+
+    if (prompt.trim().length < 3) {
+      setError("Prompt must be at least 3 characters long.");
+      return;
+    }
+
+    setIsLoading(true);
     
     console.log("Submitting new job to Firestore...");
     try {
-      await addDoc(collection(db, "jobs"), {
+      const docRef = await addDoc(collection(db, "jobs"), {
         status: 'pending_art_generation',
         prompt: prompt.trim(),
         createdAt: serverTimestamp(),
@@ -27,15 +43,22 @@ const ControlPanel = () => {
         steps,
         guidance,
         safetyTolerance,
-        seed,
+        seed: seed === -1 ? Math.floor(Math.random() * 1000000) : seed,
         promptUpsampling,
         generationCount: 0,
       });
-      alert("New art generation job has been submitted!");
+      
+      setSuccessMessage(`Art generation job submitted successfully! Job ID: ${docRef.id.slice(0, 8)}...`);
       setPrompt('');
-    } catch (e) {
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMessage(null), 5000);
+      
+    } catch (e: any) {
       console.error("Error adding document: ", e);
-      alert("Error submitting job. Check the console for details.");
+      setError(`Failed to submit job: ${e.message || 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -46,6 +69,8 @@ const ControlPanel = () => {
       text: '#ffffff',
       textMuted: '#99aab5',
       border: '#40444b',
+      error: '#ed4245',
+      success: '#57f287',
     },
     borderRadius: '8px',
   };
@@ -105,14 +130,71 @@ const ControlPanel = () => {
       background: theme.colors.primary,
       color: 'white',
       borderRadius: '8px',
-      fontWeight: 'bold'
+      fontWeight: 'bold',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      transition: 'all 0.2s ease',
+    },
+    buttonDisabled: {
+      background: theme.colors.textMuted,
+      cursor: 'not-allowed',
+      opacity: 0.6,
+    },
+    message: {
+      padding: '12px',
+      borderRadius: '6px',
+      marginBottom: '1rem',
+      fontSize: '0.9rem',
+      textAlign: 'center' as const,
+    },
+    errorMessage: {
+      backgroundColor: `${theme.colors.error}20`,
+      color: theme.colors.error,
+      border: `1px solid ${theme.colors.error}40`,
+    },
+    successMessage: {
+      backgroundColor: `${theme.colors.success}20`,
+      color: theme.colors.success,
+      border: `1px solid ${theme.colors.success}40`,
+    },
+    spinner: {
+      width: '20px',
+      height: '20px',
+      border: '2px solid transparent',
+      borderTop: '2px solid white',
+      borderRadius: '50%',
+      animation: 'spin 1s linear infinite',
     },
   };
 
   return (
     <div style={styles.card}>
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
       <h3 style={styles.title}>Generator Controls</h3>
       <p style={styles.subtitle}>Configure your art generation parameters.</p>
+
+      {/* Error Message */}
+      {error && (
+        <div style={{...styles.message, ...styles.errorMessage}}>
+          ❌ {error}
+        </div>
+      )}
+
+      {/* Success Message */}
+      {successMessage && (
+        <div style={{...styles.message, ...styles.successMessage}}>
+          ✅ {successMessage}
+        </div>
+      )}
       
       <div style={styles.formGroup}>
         <label style={styles.label}>Prompt *</label>
@@ -202,9 +284,27 @@ const ControlPanel = () => {
         </label>
       </div>
 
-      <button onClick={handleGenerateClick} style={styles.button}>
-        ✨ Generate Art
+      <button 
+        onClick={handleGenerateClick} 
+        disabled={isLoading}
+        style={{
+          ...styles.button,
+          ...(isLoading ? styles.buttonDisabled : {})
+        }}
+      >
+        {isLoading ? (
+          <>
+            <div style={styles.spinner}></div>
+            Submitting...
+          </>
+        ) : (
+          <>
+            ✨ Generate Art
+          </>
+        )}
       </button>
+
+      <JobStatus />
     </div>
   );
 };

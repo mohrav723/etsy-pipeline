@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ArtReviewCard, { Job } from './components/artReviewCard';
 import ControlPanel from './components/controlPanel';
 import HistoryTab from './components/historyTab';
+import ErrorBoundary from './components/ErrorBoundary';
 import { db } from './firebase';
 import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
 
@@ -67,55 +68,63 @@ function App() {
   } as const;
 
   return (
-    <div style={styles.app}>
-      <header style={styles.header}>
-        <h1 style={styles.title}>Etsy Pipeline Dashboard</h1>
-      </header>
-      
-      <div style={styles.mainLayout}>
-        <div style={styles.leftColumn}>
-          <ControlPanel />
-        </div>
-
-        <div style={styles.rightColumn}>
-          <div style={styles.tabContainer}>
-            <button
-              style={{
-                ...styles.tab,
-                ...(activeTab === 'review' ? styles.activeTab : {})
-              }}
-              onClick={() => setActiveTab('review')}
-            >
-              Review ({reviewJobs.length})
-            </button>
-            <button
-              style={{
-                ...styles.tab,
-                ...(activeTab === 'history' ? styles.activeTab : {})
-              }}
-              onClick={() => setActiveTab('history')}
-            >
-              History
-            </button>
+    <ErrorBoundary>
+      <div style={styles.app}>
+        <header style={styles.header}>
+          <h1 style={styles.title}>Etsy Pipeline Dashboard</h1>
+        </header>
+        
+        <div style={styles.mainLayout}>
+          <div style={styles.leftColumn}>
+            <ErrorBoundary>
+              <ControlPanel />
+            </ErrorBoundary>
           </div>
 
-          {activeTab === 'review' ? (
-            reviewJobs.length > 0 ? (
-              reviewJobs.map(job => (
-                <ArtReviewCard key={job.id} job={job} />
-              ))
-            ) : (
-              <div style={styles.noJobsMessage}>
-                <p>No images are currently waiting for review.</p>
-                <p>Use the form on the left to generate new art.</p>
-              </div>
-            )
-          ) : (
-            <HistoryTab />
-          )}
+          <div style={styles.rightColumn}>
+            <div style={styles.tabContainer}>
+              <button
+                style={{
+                  ...styles.tab,
+                  ...(activeTab === 'review' ? styles.activeTab : {})
+                }}
+                onClick={() => setActiveTab('review')}
+              >
+                Review ({reviewJobs.length})
+              </button>
+              <button
+                style={{
+                  ...styles.tab,
+                  ...(activeTab === 'history' ? styles.activeTab : {})
+                }}
+                onClick={() => setActiveTab('history')}
+              >
+                History
+              </button>
+            </div>
+
+            <ErrorBoundary>
+              {activeTab === 'review' ? (
+                reviewJobs.length > 0 ? (
+                  reviewJobs.map(job => (
+                    <ErrorBoundary key={job.id}>
+                      <ArtReviewCard job={job} />
+                    </ErrorBoundary>
+                  ))
+                ) : (
+                  <div style={styles.noJobsMessage}>
+                    <p>No images are currently waiting for review.</p>
+                    <p>Use the form on the left to generate new art.</p>
+                  </div>
+                )
+              ) : (
+                <HistoryTab />
+              )}
+            </ErrorBoundary>
+          </div>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
 
