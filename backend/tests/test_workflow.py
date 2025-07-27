@@ -2,8 +2,16 @@
 Test the Temporal workflow by starting a simple job
 """
 import asyncio
+import sys
+import os
 from temporalio.client import Client
-from simple_workflow import SimpleImageWorkflow
+
+# Add backend directory to Python path
+backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if backend_path not in sys.path:
+    sys.path.insert(0, backend_path)
+
+from src.temporal.simple_workflow import SimpleImageWorkflow
 
 async def test_workflow():
     """Test starting a workflow"""

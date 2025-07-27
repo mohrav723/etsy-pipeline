@@ -4,3 +4,8 @@ google-cloud-storage
 requests
 temporalio
 Pillow
+transformers
+torch
+opencv-python-headless
+psutil
+pytest
