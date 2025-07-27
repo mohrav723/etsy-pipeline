@@ -61,8 +61,6 @@ function App() {
         </div>
 
         <div style={styles.rightColumn}>
-          <h2 style={styles.sectionTitle}>Art for Review ({reviewJobs.length})</h2>
-          
           {reviewJobs.length > 0 ? (
             reviewJobs.map(job => (
               <ArtReviewCard key={job.id} job={job} />

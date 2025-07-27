@@ -137,8 +137,8 @@ const ControlPanel = () => {
         <label style={styles.label}>Steps: {steps}</label>
         <input
           type="range"
-          min="10"
-          max="100"
+          min="0"
+          max="50"
           value={steps}
           onChange={(e) => setSteps(Number(e.target.value))}
           style={{width: '100%'}}
@@ -149,8 +149,8 @@ const ControlPanel = () => {
         <label style={styles.label}>Guidance: {guidance}</label>
         <input
           type="range"
-          min="1"
-          max="10"
+          min="1.5"
+          max="5"
           step="0.1"
           value={guidance}
           onChange={(e) => setGuidance(Number(e.target.value))}
@@ -162,9 +162,9 @@ const ControlPanel = () => {
         <label style={styles.label}>Safety Tolerance: {safetyTolerance}</label>
         <input
           type="range"
-          min="1"
-          max="10"
-          step="0.5"
+          min="0"
+          max="6"
+          step="1"
           value={safetyTolerance}
           onChange={(e) => setSafetyTolerance(Number(e.target.value))}
           style={{width: '100%'}}
