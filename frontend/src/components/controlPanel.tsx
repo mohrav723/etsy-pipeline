@@ -1,310 +1,204 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useGeneration } from '../context/GenerationContext';
+import { 
+  Card, 
+  Form, 
+  Input, 
+  Select, 
+  Slider, 
+  InputNumber, 
+  Checkbox, 
+  Button, 
+  Typography, 
+  message,
+  Space,
+  Divider
+} from 'antd';
+import { ThunderboltOutlined, LoadingOutlined } from '@ant-design/icons';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import JobStatus from './JobStatus';
 
+const { Title, Text } = Typography;
+const { TextArea } = Input;
+
 const ControlPanel = () => {
-  const [prompt, setPrompt] = useState('');
-  const [aspectRatio, setAspectRatio] = useState('16:9');
-  const [steps, setSteps] = useState(28);
-  const [guidance, setGuidance] = useState(3);
-  const [safetyTolerance, setSafetyTolerance] = useState(2);
-  const [seed, setSeed] = useState(42);
-  const [promptUpsampling, setPromptUpsampling] = useState(false);
+  const [form] = Form.useForm();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { setIsGenerating } = useGeneration();
 
-  const handleGenerateClick = async () => {
-    // Clear previous messages
-    setError(null);
-    setSuccessMessage(null);
-
-    // Validation
-    if (!prompt.trim()) {
-      setError("Please enter a prompt before generating.");
-      return;
-    }
-
-    if (prompt.trim().length < 3) {
-      setError("Prompt must be at least 3 characters long.");
-      return;
-    }
-
+  const handleGenerateClick = async (values: any) => {
     setIsLoading(true);
+    setIsGenerating(true);
     
     console.log("Submitting new job to Firestore...");
     try {
       const docRef = await addDoc(collection(db, "jobs"), {
         status: 'pending_art_generation',
-        prompt: prompt.trim(),
+        prompt: values.prompt.trim(),
         createdAt: serverTimestamp(),
-        aspectRatio,
-        steps,
-        guidance,
-        safetyTolerance,
-        seed: seed === -1 ? Math.floor(Math.random() * 1000000) : seed,
-        promptUpsampling,
+        aspectRatio: values.aspectRatio,
+        steps: values.steps,
+        guidance: values.guidance,
+        safetyTolerance: values.safetyTolerance,
+        seed: values.seed === -1 ? Math.floor(Math.random() * 1000000) : values.seed,
+        promptUpsampling: values.promptUpsampling || false,
       });
       
-      setSuccessMessage(`Art generation job submitted successfully! Job ID: ${docRef.id.slice(0, 8)}...`);
-      setPrompt('');
+      message.success(`Art generation job submitted! ID: ${docRef.id.slice(0, 8)}...`);
+      form.resetFields(['prompt']);
       
-      // Clear success message after 5 seconds
-      setTimeout(() => setSuccessMessage(null), 5000);
+      // Keep showing loading state until image is generated
+      // The loading state will be cleared when a new job appears in pending_review
       
     } catch (e: any) {
       console.error("Error adding document: ", e);
-      setError(`Failed to submit job: ${e.message || 'Unknown error'}`);
+      message.error(`Failed to submit job: ${e.message || 'Unknown error'}`);
+      setIsGenerating(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const theme = {
-    colors: {
-      primary: '#5865f2',
-      surface: '#23272a',
-      text: '#ffffff',
-      textMuted: '#99aab5',
-      border: '#40444b',
-      error: '#ed4245',
-      success: '#57f287',
-    },
-    borderRadius: '8px',
+  const handleFormFinish = (values: any) => {
+    handleGenerateClick(values);
   };
 
-  const styles = {
-    card: {
-      backgroundColor: theme.colors.surface,
-      padding: '1.5rem',
-      borderRadius: theme.borderRadius,
-      border: `1px solid ${theme.colors.border}`,
-    },
-    title: {
-      color: theme.colors.text,
-      margin: '0 0 0.5rem 0'
-    },
-    subtitle: {
-      color: theme.colors.textMuted,
-      margin: '0 0 1.5rem 0',
-      fontSize: '0.9rem'
-    },
-    formGroup: {
-      marginBottom: '1rem',
-      textAlign: 'left' as const,
-    },
-    label: {
-      display: 'block',
-      marginBottom: '0.5rem',
-      color: theme.colors.text,
-      fontSize: '0.9rem',
-    },
-    input: {
-      width: '100%',
-      padding: '8px',
-      borderRadius: '4px',
-      border: `1px solid ${theme.colors.border}`,
-      backgroundColor: '#1a1a1a',
-      color: theme.colors.text,
-      boxSizing: 'border-box' as const,
-    },
-    textarea: {
-      width: '100%',
-      padding: '8px',
-      borderRadius: '4px',
-      border: `1px solid ${theme.colors.border}`,
-      backgroundColor: '#1a1a1a',
-      color: theme.colors.text,
-      boxSizing: 'border-box' as const,
-      resize: 'vertical' as const,
-      minHeight: '80px',
-    },
-    button: {
-      width: '100%',
-      padding: '15px',
-      fontSize: '1rem',
-      cursor: 'pointer',
-      border: 'none',
-      background: theme.colors.primary,
-      color: 'white',
-      borderRadius: '8px',
-      fontWeight: 'bold',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '8px',
-      transition: 'all 0.2s ease',
-    },
-    buttonDisabled: {
-      background: theme.colors.textMuted,
-      cursor: 'not-allowed',
-      opacity: 0.6,
-    },
-    message: {
-      padding: '12px',
-      borderRadius: '6px',
-      marginBottom: '1rem',
-      fontSize: '0.9rem',
-      textAlign: 'center' as const,
-    },
-    errorMessage: {
-      backgroundColor: `${theme.colors.error}20`,
-      color: theme.colors.error,
-      border: `1px solid ${theme.colors.error}40`,
-    },
-    successMessage: {
-      backgroundColor: `${theme.colors.success}20`,
-      color: theme.colors.success,
-      border: `1px solid ${theme.colors.success}40`,
-    },
-    spinner: {
-      width: '20px',
-      height: '20px',
-      border: '2px solid transparent',
-      borderTop: '2px solid white',
-      borderRadius: '50%',
-      animation: 'spin 1s linear infinite',
-    },
+  const handleFormFinishFailed = () => {
+    message.error('Please fill in all required fields correctly.');
   };
 
   return (
-    <div style={styles.card}>
+    <Card
+      title={
+        <Space direction="vertical" size={4} style={{ width: '100%' }}>
+          <Title level={3} style={{ margin: 0, color: '#ffffff', fontSize: '18px' }}>
+            Generator Controls
+          </Title>
+        </Space>
+      }
+      style={{ height: 'fit-content' }}
+      styles={{ body: { padding: '16px' } }}
+    >
       <style>
         {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+          .compact-form .ant-form-item {
+            margin-bottom: 8px !important;
+          }
+          .compact-form .ant-form-item:last-child {
+            margin-bottom: 0 !important;
           }
         `}
       </style>
-      <h3 style={styles.title}>Generator Controls</h3>
-      <p style={styles.subtitle}>Configure your art generation parameters.</p>
-
-      {/* Error Message */}
-      {error && (
-        <div style={{...styles.message, ...styles.errorMessage}}>
-          ❌ {error}
-        </div>
-      )}
-
-      {/* Success Message */}
-      {successMessage && (
-        <div style={{...styles.message, ...styles.successMessage}}>
-          ✅ {successMessage}
-        </div>
-      )}
-      
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Prompt *</label>
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe the image you want to generate..."
-          style={styles.textarea}
-        />
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Aspect Ratio</label>
-        <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} style={styles.input}>
-          <option value="16:9">16:9 (Landscape)</option>
-          <option value="1:1">1:1 (Square)</option>
-          <option value="9:16">9:16 (Portrait)</option>
-        </select>
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Steps: {steps}</label>
-        <p style={{...styles.subtitle, margin: '0 0 0.5rem 0', fontSize: '0.8rem'}}>
-          More steps = better quality, but slower generation
-        </p>
-        <input
-          type="range"
-          min="0"
-          max="50"
-          value={steps}
-          onChange={(e) => setSteps(Number(e.target.value))}
-          style={{width: '100%'}}
-        />
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Guidance: {guidance}</label>
-        <p style={{...styles.subtitle, margin: '0 0 0.5rem 0', fontSize: '0.8rem'}}>
-        High guidance scales improve prompt adherence at the cost of reduced realism
-        </p>
-        <input
-          type="range"
-          min="1.5"
-          max="5"
-          step="0.1"
-          value={guidance}
-          onChange={(e) => setGuidance(Number(e.target.value))}
-          style={{width: '100%'}}
-        />
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Safety Tolerance: {safetyTolerance}</label>
-        <input
-          type="range"
-          min="0"
-          max="6"
-          step="1"
-          value={safetyTolerance}
-          onChange={(e) => setSafetyTolerance(Number(e.target.value))}
-          style={{width: '100%'}}
-        />
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Seed</label>
-        <p style={{...styles.subtitle, margin: '0 0 0.5rem 0', fontSize: '0.8rem'}}>
-          Use -1 for random, or specific number for reproducible results
-        </p>
-        <input
-          type="number"
-          value={seed}
-          onChange={(e) => setSeed(Number(e.target.value))}
-          style={styles.input}
-        />
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>
-          <input
-            type="checkbox"
-            checked={promptUpsampling}
-            onChange={(e) => setPromptUpsampling(e.target.checked)}
-            style={{marginRight: '8px'}}
-          />
-          Prompt Upsampling
-        </label>
-      </div>
-
-      <button 
-        onClick={handleGenerateClick} 
-        disabled={isLoading}
-        style={{
-          ...styles.button,
-          ...(isLoading ? styles.buttonDisabled : {})
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleFormFinish}
+        onFinishFailed={handleFormFinishFailed}
+        size="small"
+        className="compact-form"
+        initialValues={{
+          aspectRatio: '16:9',
+          steps: 28,
+          guidance: 3,
+          safetyTolerance: 2,
+          seed: 42,
+          promptUpsampling: false,
         }}
       >
-        {isLoading ? (
-          <>
-            <div style={styles.spinner}></div>
-            Submitting...
-          </>
-        ) : (
-          <>
-            ✨ Generate Art
-          </>
-        )}
-      </button>
+        <Form.Item
+          label="Prompt"
+          name="prompt"
+                    rules={[
+            { required: true, message: 'Please enter a prompt' },
+            { min: 3, message: 'Prompt must be at least 3 characters long' }
+          ]}
+        >
+          <TextArea
+            rows={2}
+            placeholder="Describe the image you want to generate..."
+            style={{ resize: 'vertical' }}
+          />
+        </Form.Item>
 
+        <Form.Item label="Aspect Ratio" name="aspectRatio" style={{ marginBottom: '8px' }}>
+          <Select>
+            <Select.Option value="16:9">16:9 (Landscape)</Select.Option>
+            <Select.Option value="1:1">1:1 (Square)</Select.Option>
+            <Select.Option value="9:16">9:16 (Portrait)</Select.Option>
+          </Select>
+        </Form.Item>
+
+        <Form.Item label="Steps" name="steps" style={{ marginBottom: '8px' }}>
+          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+            <Text type="secondary" style={{ fontSize: '11px' }}>
+              More steps = better quality, but slower generation
+            </Text>
+            <Slider
+              min={1}
+              max={50}
+              tooltip={{ formatter: (value) => `${value} steps` }}
+            />
+          </Space>
+        </Form.Item>
+
+        <Form.Item label="Guidance" name="guidance" style={{ marginBottom: '8px' }}>
+          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+            <Text type="secondary" style={{ fontSize: '11px' }}>
+              High guidance scales improve prompt adherence at the cost of reduced realism
+            </Text>
+            <Slider
+              min={1.5}
+              max={5}
+              step={0.1}
+              tooltip={{ formatter: (value) => `${value}` }}
+            />
+          </Space>
+        </Form.Item>
+
+        <Form.Item label="Safety Tolerance" name="safetyTolerance" style={{ marginBottom: '8px' }}>
+          <Slider
+            min={0}
+            max={6}
+            step={1}
+            tooltip={{ formatter: (value) => `Level ${value}` }}
+          />
+        </Form.Item>
+
+        <Form.Item label="Seed" name="seed" style={{ marginBottom: '8px' }}>
+          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+            <Text type="secondary" style={{ fontSize: '11px' }}>
+              Use -1 for random, or specific number for reproducible results
+            </Text>
+            <InputNumber
+              style={{ width: '100%' }}
+              placeholder="Enter seed or -1 for random"
+            />
+          </Space>
+        </Form.Item>
+
+        <Form.Item name="promptUpsampling" valuePropName="checked" style={{ marginBottom: '8px' }}>
+          <Checkbox>Prompt Upsampling</Checkbox>
+        </Form.Item>
+
+        <Form.Item style={{ marginBottom: 0, marginTop: '8px' }}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={isLoading}
+            icon={isLoading ? <LoadingOutlined /> : <ThunderboltOutlined />}
+            size="middle"
+            block
+          >
+            {isLoading ? 'Submitting...' : 'Generate Art'}
+          </Button>
+        </Form.Item>
+      </Form>
+
+      <Divider style={{ margin: '12px 0 8px 0' }} />
+      
       <JobStatus />
-    </div>
+    </Card>
   );
 };
 
