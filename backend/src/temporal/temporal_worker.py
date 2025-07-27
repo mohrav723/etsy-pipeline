@@ -3,10 +3,16 @@ Temporal worker that replaces your current backend/app.py
 """
 import asyncio
 import os
+import sys
 from temporalio.client import Client
 from temporalio.worker import Worker
 
-from simple_workflow import SimpleImageWorkflow, generate_and_store_image, update_firestore_job
+# Add backend directory to Python path
+backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+if backend_path not in sys.path:
+    sys.path.insert(0, backend_path)
+
+from src.temporal.simple_workflow import SimpleImageWorkflow, generate_and_store_image, update_firestore_job
 
 async def main():
     # Connect to Temporal server

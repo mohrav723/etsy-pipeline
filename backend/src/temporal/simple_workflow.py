@@ -35,7 +35,7 @@ async def generate_and_store_image(job_data: Dict[str, Any]) -> str:
     load_dotenv()
     
     # Add the backend directory to Python path
-    backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend'))
+    backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
     if backend_path not in sys.path:
         sys.path.insert(0, backend_path)
     

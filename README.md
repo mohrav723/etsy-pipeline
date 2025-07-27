@@ -68,7 +68,7 @@ npm run dev
 Create a test job to verify the system works:
 ```bash
 cd backend
-python create_test_job.py
+python scripts/create_test_job.py
 ```
 
 ## How It Works
@@ -90,8 +90,8 @@ The system automatically tracks costs for:
 
 ### Viewing Costs
 - **Frontend**: Click the "💰 Costs" tab to see real-time cost breakdowns
-- **Command Line**: Run `python get_cost_summary.py` for detailed cost reports
-- **JSON API**: Use `python get_cost_summary.py --json` for programmatic access
+- **Command Line**: Run `python scripts/get_cost_summary.py` for detailed cost reports
+- **JSON API**: Use `python scripts/get_cost_summary.py --json` for programmatic access
 
 ### Cost Data
 - All costs are stored in Firestore `costs` collection

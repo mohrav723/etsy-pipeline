@@ -35,7 +35,7 @@ sleep 5
 # Start backend worker
 echo "2️⃣ Starting Temporal worker..."
 cd backend
-source venv/bin/activate && python temporal_worker.py > temporal_worker.log 2>&1 &
+source venv/bin/activate && python -m src.temporal.temporal_worker > logs/temporal_worker.log 2>&1 &
 WORKER_PID=$!
 
 # Wait a moment for worker to start
@@ -43,7 +43,7 @@ sleep 2
 
 # Start job starter
 echo "3️⃣ Starting job starter (Firestore listener)..."
-source venv/bin/activate && python temporal_job_starter.py > temporal_job_starter.log 2>&1 &
+source venv/bin/activate && python -m src.temporal.temporal_job_starter > logs/temporal_job_starter.log 2>&1 &
 JOB_STARTER_PID=$!
 
 # Wait a moment for job starter to start
@@ -63,12 +63,12 @@ echo "📊 Temporal UI: http://localhost:8080"
 echo ""
 echo "📝 Logs are being written to:"
 echo "   - temporal_server.log"
-echo "   - backend/temporal_worker.log"
-echo "   - backend/temporal_job_starter.log"
+echo "   - backend/logs/temporal_worker.log"
+echo "   - backend/logs/temporal_job_starter.log"
 echo "   - frontend/frontend.log"
 echo ""
 echo "🧪 Test the system:"
-echo "   cd backend && python create_test_job.py"
+echo "   cd backend && python scripts/create_test_job.py"
 echo ""
 echo "🛑 Press Ctrl+C to stop all services"
 

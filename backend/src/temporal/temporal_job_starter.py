@@ -3,10 +3,18 @@ Temporal Job Starter - Replaces your current app.py
 Watches Firestore and starts Temporal workflows
 """
 import asyncio
+import os
+import sys
 from dotenv import load_dotenv
 import google.cloud.firestore as firestore
 from temporalio.client import Client
-from simple_workflow import SimpleImageWorkflow
+
+# Add backend directory to Python path
+backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+if backend_path not in sys.path:
+    sys.path.insert(0, backend_path)
+
+from src.temporal.simple_workflow import SimpleImageWorkflow
 
 # Load environment variables like your current worker
 load_dotenv()
