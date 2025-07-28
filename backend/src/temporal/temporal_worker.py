@@ -13,14 +13,6 @@ if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
 from src.temporal.simple_workflow import SimpleImageWorkflow, generate_and_store_image, update_firestore_job
-from src.temporal.mockup_generation_workflow import (
-    MockupGenerationWorkflow, 
-    get_available_mockups, 
-    create_draft_entry, 
-    generate_mockup_image, 
-    update_draft_with_mockup, 
-    mark_draft_failed
-)
 from src.temporal.intelligent_mockup_generation_workflow import (
     IntelligentMockupGenerationWorkflow,
     update_intelligent_job_status,
@@ -41,19 +33,12 @@ async def main():
         task_queue="image-generation-queue",
         workflows=[
             SimpleImageWorkflow, 
-            MockupGenerationWorkflow, 
             IntelligentMockupGenerationWorkflow
         ],
         activities=[
             # Simple workflow activities
             generate_and_store_image, 
             update_firestore_job,
-            # Mockup generation workflow activities
-            get_available_mockups,
-            create_draft_entry,
-            generate_mockup_image,
-            update_draft_with_mockup,
-            mark_draft_failed,
             # Intelligent mockup generation workflow activities
             update_intelligent_job_status,
             download_artwork_and_template,
@@ -68,7 +53,6 @@ async def main():
     print("📊 Temporal UI available at: http://localhost:8080")
     print("🎯 Registered workflows:")
     print("   - SimpleImageWorkflow (simple art generation)")
-    print("   - MockupGenerationWorkflow (simple mockup creation)")
     print("   - IntelligentMockupGenerationWorkflow (AI-powered mockup creation)")
     print("🔧 Task queue: image-generation-queue")
     

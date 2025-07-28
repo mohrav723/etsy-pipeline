@@ -15,7 +15,6 @@ if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
 from src.temporal.simple_workflow import SimpleImageWorkflow
-from src.temporal.mockup_generation_workflow import MockupGenerationWorkflow
 from src.temporal.intelligent_mockup_generation_workflow_optimized import IntelligentMockupGenerationWorkflow
 
 # Load environment variables like your current worker
@@ -47,11 +46,6 @@ class TemporalJobStarter:
         jobs_query_ref = jobs_collection_ref.where(filter=firestore.FieldFilter('status', '==', 'pending_art_generation'))
         jobs_query_ref.on_snapshot(self.handle_job_changes)
         
-        # Listen for mockup jobs
-        mockup_jobs_collection_ref = self.db.collection('mockup_jobs')
-        mockup_jobs_query_ref = mockup_jobs_collection_ref.where(filter=firestore.FieldFilter('status', '==', 'pending_mockup_generation'))
-        mockup_jobs_query_ref.on_snapshot(self.handle_mockup_changes)
-        
         # Listen for intelligent mockup jobs
         intelligent_mockup_jobs_collection_ref = self.db.collection('intelligent_mockup_jobs')
         intelligent_mockup_jobs_query_ref = intelligent_mockup_jobs_collection_ref.where(filter=firestore.FieldFilter('status', '==', 'pending'))
@@ -59,7 +53,6 @@ class TemporalJobStarter:
         
         print("🔥 Listening for Firestore changes...")
         print("📋 Watching for jobs with status: 'pending_art_generation'")
-        print("🎨 Watching for mockup_jobs with status: 'pending_mockup_generation'")
         print("🧠 Watching for intelligent_mockup_jobs with status: 'pending' (OPTIMIZED)")
         print("🌐 Temporal UI: http://localhost:8080")
         print("✨ Optimizations enabled for intelligent mockups")
@@ -79,16 +72,6 @@ class TemporalJobStarter:
                 # Schedule the async task in the main event loop
                 asyncio.run_coroutine_threadsafe(
                     self.process_job(change.document),
-                    self.loop
-                )
-    
-    def handle_mockup_changes(self, collection_snapshot, changes, read_time):
-        """Handle Firestore mockup job changes"""
-        for change in changes:
-            if change.type.name == 'ADDED':
-                # Schedule the async task in the main event loop
-                asyncio.run_coroutine_threadsafe(
-                    self.process_mockup_job(change.document),
                     self.loop
                 )
     
@@ -122,30 +105,6 @@ class TemporalJobStarter:
             task_queue="image-generation-queue",
         )
         print(f"✅ Started workflow: {workflow_id}")
-    
-    async def process_mockup_job(self, document):
-        """Process a new mockup job document"""
-        job_id = document.id
-        data = document.to_dict()
-        print(f"\n📷 Processing new mockup job: {job_id}")
-        
-        # Convert Firestore timestamps to strings
-        for key, value in data.items():
-            if hasattr(value, 'isoformat'):
-                data[key] = value.isoformat()
-        
-        # Add the job ID to the data
-        data['job_id'] = job_id
-        
-        # Start the workflow
-        workflow_id = f"mockup-gen-{job_id}"
-        await self.temporal_client.start_workflow(
-            MockupGenerationWorkflow.run,
-            data,
-            id=workflow_id,
-            task_queue="image-generation-queue",
-        )
-        print(f"✅ Started mockup workflow: {workflow_id}")
     
     async def process_intelligent_mockup_job(self, document):
         """Process a new intelligent mockup job document"""

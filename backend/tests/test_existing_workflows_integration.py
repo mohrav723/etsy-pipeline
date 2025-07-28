@@ -18,7 +18,6 @@ if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
 from src.temporal.simple_workflow import SimpleImageWorkflow
-from src.temporal.mockup_generation_workflow import MockupGenerationWorkflow
 from src.storage import upload_image_to_storage
 from src.cost_tracker import CostTracker
 
@@ -107,19 +106,6 @@ class TestExistingWorkflowsIntegration:
         except Exception as e:
             pytest.fail(f"SimpleImageWorkflow structure test failed: {e}")
     
-    @patch('google.cloud.firestore.Client')
-    def test_mockup_workflow_structure_unchanged(self, mock_firestore):
-        """Test that existing MockupGenerationWorkflow class structure is unchanged."""
-        try:
-            # Verify the workflow class exists and has expected methods
-            assert hasattr(MockupGenerationWorkflow, 'run'), "MockupGenerationWorkflow.run method missing"
-            
-            # Test workflow can be instantiated
-            workflow = MockupGenerationWorkflow()
-            assert workflow is not None
-            
-        except Exception as e:
-            pytest.fail(f"MockupGenerationWorkflow structure test failed: {e}")
     
     def test_temporal_imports_unchanged(self):
         """Test that Temporal-related imports still work."""
@@ -238,24 +224,6 @@ class TestExistingCollectionsIntact:
         except Exception as e:
             pytest.fail(f"Jobs collection access failed: {e}")
     
-    @patch('google.cloud.firestore.Client')
-    def test_mockup_jobs_collection_unchanged(self, mock_firestore):
-        """Test that 'mockup_jobs' collection operations still work."""
-        mock_db = Mock()
-        mock_firestore.return_value = mock_db
-        
-        # Mock collection operations
-        mock_collection = Mock()
-        mock_db.collection.return_value = mock_collection
-        
-        try:
-            # Test collection access patterns used by existing code
-            db = mock_firestore()
-            mockup_jobs_ref = db.collection('mockup_jobs')
-            assert mockup_jobs_ref is not None
-            
-        except Exception as e:
-            pytest.fail(f"Mockup jobs collection access failed: {e}")
 
 
 if __name__ == "__main__":

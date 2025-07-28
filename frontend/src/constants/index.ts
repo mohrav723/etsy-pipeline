@@ -18,13 +18,6 @@ export const JOB_STATUS = {
   PENDING_REVIEW: 'pending_review'
 } as const;
 
-// Mockup job status
-export const MOCKUP_STATUS = {
-  PENDING: 'pending_mockup_generation',
-  PROCESSING: 'processing',
-  COMPLETED: 'completed',
-  FAILED: 'failed'
-} as const;
 
 // API limits
 export const MAX_PROMPT_LENGTH = 1000;

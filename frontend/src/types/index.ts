@@ -2,7 +2,6 @@ import { Timestamp } from 'firebase/firestore';
 
 // Job-related types
 export type JobStatus = 'pending_art_generation' | 'processing' | 'completed' | 'failed' | 'approved' | 'pending_review';
-export type MockupJobStatus = 'pending_mockup_generation' | 'processing' | 'completed' | 'failed';
 export type IntelligentMockupJobStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'retried';
 
 export interface Job {
@@ -20,15 +19,6 @@ export interface Job {
   approvedAt?: Timestamp;
 }
 
-export interface MockupJob {
-  id: string;
-  jobId: string;
-  mockupId: string;
-  status: MockupJobStatus;
-  mockupUrl?: string;
-  error?: string;
-  createdAt: Timestamp;
-}
 
 export interface Mockup {
   id: string;
@@ -129,5 +119,3 @@ export const isIntelligentMockupJob = (job: any): job is IntelligentMockupJob =>
          (job.original_job_id || job.sourceJobId) && (job.artwork_url || job.sourceImageUrl);
 };
 
-// Utility types
-export type MockupType = 'simple' | 'intelligent';
