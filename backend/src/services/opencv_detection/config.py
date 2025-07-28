@@ -41,11 +41,25 @@ class OpenCVObjectDetectionConfig:
     enable_parallel_detection: bool = True  # Run detectors in parallel
     detection_timeout: float = 5.0  # Timeout for each detector in seconds
     max_image_dimension: int = 4096  # Maximum image dimension to process
+    parallel_processing: bool = True  # Alias for enable_parallel_detection
+    detector_timeout: float = 5.0  # Timeout for individual detectors
     
     # Scoring weights for region ranking
     size_weight: float = 0.3  # Weight for region size in scoring
     position_weight: float = 0.2  # Weight for central position
     confidence_weight: float = 0.5  # Weight for detection confidence
+    
+    # Additional parameters for service
+    enabled_detectors: List[str] = field(default_factory=lambda: ['edge', 'contour', 'color', 'template', 'fallback'])
+    merge_iou_threshold: float = 0.3  # IoU threshold for merging overlapping regions
+    min_region_area_ratio: float = 0.01  # Minimum region area as ratio of image area
+    scoring_weights: dict = field(default_factory=lambda: {
+        'confidence': 0.3,
+        'size': 0.25,
+        'aspect_ratio': 0.15,
+        'position': 0.2,
+        'edge_distance': 0.1
+    })
     
     def validate(self) -> None:
         """Validate configuration parameters."""
@@ -67,9 +81,17 @@ class OpenCVObjectDetectionConfig:
         if not all(0 < scale <= 2.0 for scale in self.template_scales):
             raise ValueError("Template scales must be between 0 and 2.0")
         
-        weights_sum = self.size_weight + self.position_weight + self.confidence_weight
-        if abs(weights_sum - 1.0) > 0.001:
-            raise ValueError(f"Scoring weights must sum to 1.0, got {weights_sum}")
+        # Validate scoring weights
+        if self.scoring_weights:
+            weights_sum = sum(self.scoring_weights.values())
+            if abs(weights_sum - 1.0) > 0.001:
+                raise ValueError(f"Scoring weights must sum to 1.0, got {weights_sum}")
+        
+        # Validate enabled detectors
+        valid_detectors = {'edge', 'contour', 'color', 'template', 'fallback'}
+        for detector in self.enabled_detectors:
+            if detector not in valid_detectors:
+                raise ValueError(f"Invalid detector: {detector}. Must be one of {valid_detectors}")
     
     @classmethod
     def for_high_quality(cls) -> 'OpenCVObjectDetectionConfig':

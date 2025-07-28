@@ -7,10 +7,17 @@ replacing the previous DETR (AI-based) implementation with more reliable OpenCV 
 
 from .config import OpenCVObjectDetectionConfig
 from .base import BaseDetector, BoundingBox
+from .opencv_detection_service import (
+    OpenCVObjectDetectionService,
+    ObjectDetectionError,
+    NoSuitableRegionsError
+)
 
-# OpenCVObjectDetectionService will be imported once implemented
 __all__ = [
     'OpenCVObjectDetectionConfig',
     'BaseDetector',
-    'BoundingBox'
+    'BoundingBox',
+    'OpenCVObjectDetectionService',
+    'ObjectDetectionError',
+    'NoSuitableRegionsError'
 ]
