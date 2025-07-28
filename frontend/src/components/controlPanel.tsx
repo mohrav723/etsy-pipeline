@@ -36,7 +36,7 @@ const ControlPanel = () => {
     
     try {
       const docRef = await addDoc(collection(db, "jobs"), {
-        status: 'pending_art_generation',
+        status: JOB_STATUS.PENDING_ART,
         prompt: values.prompt.trim(),
         createdAt: serverTimestamp(),
         aspectRatio: values.aspectRatio,
@@ -98,21 +98,14 @@ const ControlPanel = () => {
         onFinishFailed={handleFormFinishFailed}
         size="small"
         className="compact-form"
-        initialValues={{
-          aspectRatio: '16:9',
-          steps: 28,
-          guidance: 3,
-          safetyTolerance: 2,
-          seed: 42,
-          promptUpsampling: false,
-        }}
+        initialValues={GENERATION_DEFAULTS}
       >
         <Form.Item
           label="Prompt"
           name="prompt"
                     rules={[
             { required: true, message: 'Please enter a prompt' },
-            { min: 3, message: 'Prompt must be at least 3 characters long' }
+            { min: MIN_PROMPT_LENGTH, message: `Prompt must be at least ${MIN_PROMPT_LENGTH} characters long` }
           ]}
         >
           <TextArea
