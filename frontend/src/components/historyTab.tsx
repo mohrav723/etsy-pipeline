@@ -354,7 +354,7 @@ const HistoryTab = ({}: HistoryTabProps) => {
             <div style={{ marginTop: '24px', textAlign: 'center' }}>
               <MockupButton
                 jobId={selectedJob.id}
-                imageUrl={selectedJob.generatedImageUrl}
+                imageUrl={selectedJob.generatedImageUrl || ''}
                 prompt={selectedJob.prompt}
                 size="large"
                 block={true}

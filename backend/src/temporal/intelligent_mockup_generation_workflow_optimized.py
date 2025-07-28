@@ -62,6 +62,40 @@ async def update_intelligent_job_status(job_id: str, updates: Dict[str, Any]) ->
         raise
 
 @activity.defn
+async def get_all_mockup_templates() -> List[Dict[str, Any]]:
+    """
+    Fetch all available mockup templates from Firestore
+    """
+    import os
+    from dotenv import load_dotenv
+    import google.cloud.firestore as firestore
+    
+    load_dotenv()
+    
+    activity.logger.info("Fetching all mockup templates")
+    
+    try:
+        db = firestore.Client()
+        mockups_collection = db.collection('mockups')
+        mockups_snapshot = mockups_collection.get()
+        
+        templates = []
+        for doc in mockups_snapshot:
+            data = doc.to_dict()
+            templates.append({
+                'id': doc.id,
+                'name': data.get('name', 'Unknown'),
+                'url': data.get('imageUrl') or data.get('url'),
+            })
+        
+        activity.logger.info(f"Found {len(templates)} mockup templates")
+        return templates
+        
+    except Exception as e:
+        activity.logger.error(f"Failed to fetch mockup templates: {str(e)}")
+        raise
+
+@activity.defn
 async def download_and_process_images(artwork_url: str, mockup_template: str, job_id: str) -> Dict[str, Any]:
     """
     Download artwork and mockup template, detect regions, and store intermediate results
@@ -112,7 +146,7 @@ async def download_and_process_images(artwork_url: str, mockup_template: str, jo
             mockup_doc = mockup_docs[0]
         
         mockup_data = mockup_doc.to_dict()
-        template_url = mockup_data.get('url')
+        template_url = mockup_data.get('imageUrl') or mockup_data.get('url')  # Try both field names
         if not template_url:
             raise ValueError(f"Mockup template '{mockup_template}' has no URL")
         
@@ -160,11 +194,13 @@ async def download_and_process_images(artwork_url: str, mockup_template: str, jo
         temp_artwork_name = f"intelligent-mockups/temp/{job_id}_artwork.png"
         artwork_blob = bucket.blob(temp_artwork_name)
         artwork_blob.upload_from_string(artwork_bytes, content_type='image/png')
+        artwork_blob.make_public()  # Make the blob publicly accessible
         temp_artwork_url = artwork_blob.public_url
         
         temp_template_name = f"intelligent-mockups/temp/{job_id}_template.png"
         template_blob = bucket.blob(temp_template_name)
         template_blob.upload_from_string(template_bytes, content_type='image/png')
+        template_blob.make_public()  # Make the blob publicly accessible
         temp_template_url = template_blob.public_url
         
         # Log processing cost
@@ -257,7 +293,7 @@ async def create_intelligent_mockup(
         )
         
         # Compose final mockup
-        final_mockup = transform_service.compose_mockup(
+        final_mockup = transform_service.create_composite_image(
             template_image, result.transformed_image, region
         )
         
@@ -301,6 +337,54 @@ async def create_intelligent_mockup(
         activity.logger.error(f"Failed to create intelligent mockup: {str(e)}")
         raise
 
+@activity.defn
+async def store_multiple_mockup_results(
+    job_id: str, 
+    mockup_results: List[Dict[str, Any]]
+) -> None:
+    """
+    Store multiple mockup results in Firestore
+    """
+    import os
+    from dotenv import load_dotenv
+    import google.cloud.firestore as firestore
+    from google.cloud.firestore import SERVER_TIMESTAMP
+    
+    load_dotenv()
+    
+    activity.logger.info(f"Storing {len(mockup_results)} mockup results for job {job_id}")
+    
+    try:
+        db = firestore.Client()
+        
+        # Update the main job with all results
+        job_ref = db.collection('intelligent_mockup_jobs').document(job_id)
+        
+        # Prepare update data
+        update_data = {
+            'status': 'completed',
+            'processing_completed_at': SERVER_TIMESTAMP,
+            'mockup_results': mockup_results,  # Store all results
+            'total_mockups_generated': len(mockup_results),
+            'detected_regions_total': sum(r.get('detected_regions', 0) for r in mockup_results)
+        }
+        
+        # Also keep the first result for backward compatibility
+        if mockup_results:
+            first_result = mockup_results[0]
+            update_data.update({
+                'result_url': first_result.get('url'),
+                'detected_regions': first_result.get('detected_regions'),
+                'selected_region': first_result.get('selected_region')
+            })
+        
+        job_ref.update(update_data)
+        activity.logger.info(f"Successfully stored {len(mockup_results)} mockup results")
+        
+    except Exception as e:
+        activity.logger.error(f"Failed to store mockup results: {str(e)}")
+        raise
+
 @workflow.defn
 class IntelligentMockupGenerationWorkflow:
     """
@@ -311,13 +395,13 @@ class IntelligentMockupGenerationWorkflow:
     @workflow.run
     async def run(self, job_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Run the intelligent mockup generation workflow
+        Run the intelligent mockup generation workflow for ALL templates
         
         Args:
             job_data: Dictionary containing:
                 - job_id: Unique job identifier
                 - artwork_url: URL of the artwork image
-                - mockup_template: Name/ID of the mockup template
+                - mockup_template: Name/ID of the mockup template (ignored, will use all)
                 - original_job_id: Optional reference to original art generation job
         
         Returns:
@@ -325,11 +409,9 @@ class IntelligentMockupGenerationWorkflow:
         """
         job_id = job_data['job_id']
         artwork_url = job_data['artwork_url']
-        mockup_template = job_data['mockup_template']
         
         workflow.logger.info(f"Starting optimized intelligent mockup generation workflow for job {job_id}")
         workflow.logger.info(f"Artwork URL: {artwork_url}")
-        workflow.logger.info(f"Mockup template: {mockup_template}")
         
         try:
             # Step 1: Update status to processing
@@ -340,27 +422,114 @@ class IntelligentMockupGenerationWorkflow:
                 retry_policy=RetryPolicy(maximum_attempts=3)
             )
             
-            # Step 2: Download, detect regions, and prepare images
-            # This combines multiple steps to reduce gRPC calls
-            processing_result = await workflow.execute_activity(
-                download_and_process_images,
-                args=[artwork_url, mockup_template, job_id],
-                start_to_close_timeout=timedelta(minutes=5),  # Increased timeout for AI processing
-                retry_policy=RetryPolicy(
-                    maximum_attempts=2,
-                    backoff_coefficient=2.0,
-                    initial_interval=timedelta(seconds=1),
-                    maximum_interval=timedelta(seconds=30)
-                )
+            # Step 2: Get all available mockup templates
+            templates = await workflow.execute_activity(
+                get_all_mockup_templates,
+                start_to_close_timeout=timedelta(seconds=30),
+                retry_policy=RetryPolicy(maximum_attempts=2)
             )
             
-            if not processing_result['success']:
-                # Failed to process images
+            if not templates:
                 await workflow.execute_activity(
                     update_intelligent_job_status,
                     args=[job_id, {
                         'status': 'failed',
-                        'error_message': processing_result.get('error', 'Unknown error during image processing')
+                        'error_message': 'No mockup templates available'
+                    }],
+                    start_to_close_timeout=timedelta(seconds=30),
+                    retry_policy=RetryPolicy(maximum_attempts=1)
+                )
+                return {
+                    'job_id': job_id,
+                    'status': 'failed',
+                    'error': 'No mockup templates available'
+                }
+            
+            workflow.logger.info(f"Processing {len(templates)} mockup templates")
+            
+            # Step 3: Process each template
+            mockup_results = []
+            failed_count = 0
+            
+            for template in templates:
+                try:
+                    # Process each template
+                    processing_result = await workflow.execute_activity(
+                        download_and_process_images,
+                        args=[artwork_url, template['id'], f"{job_id}_{template['id']}"],
+                        start_to_close_timeout=timedelta(minutes=5),
+                        retry_policy=RetryPolicy(
+                            maximum_attempts=1,  # Reduced retries per template
+                            backoff_coefficient=2.0,
+                            initial_interval=timedelta(seconds=1),
+                            maximum_interval=timedelta(seconds=30)
+                        )
+                    )
+                    
+                    if not processing_result['success']:
+                        workflow.logger.warning(f"Failed to process template {template['name']}: {processing_result.get('error')}")
+                        failed_count += 1
+                        continue
+                    
+                    # Create the final mockup for this template
+                    result_url = await workflow.execute_activity(
+                        create_intelligent_mockup,
+                        args=[
+                            processing_result['temp_artwork_url'],
+                            processing_result['temp_template_url'],
+                            processing_result['best_region'],
+                            processing_result['template_size'],
+                            f"{job_id}_{template['id']}"
+                        ],
+                        start_to_close_timeout=timedelta(minutes=3),
+                        retry_policy=RetryPolicy(
+                            maximum_attempts=1,
+                            backoff_coefficient=2.0
+                        )
+                    )
+                    
+                    # Store result
+                    mockup_results.append({
+                        'template_id': template['id'],
+                        'template_name': template['name'],
+                        'url': result_url,
+                        'detected_regions': len(processing_result['regions']),
+                        'selected_region': processing_result['best_region']['label']
+                    })
+                    
+                    workflow.logger.info(f"Successfully processed template {template['name']}")
+                    
+                except Exception as e:
+                    workflow.logger.error(f"Failed to process template {template['name']}: {str(e)}")
+                    failed_count += 1
+                    continue
+            
+            # Step 4: Store all results
+            if mockup_results:
+                await workflow.execute_activity(
+                    store_multiple_mockup_results,
+                    args=[job_id, mockup_results],
+                    start_to_close_timeout=timedelta(seconds=30),
+                    retry_policy=RetryPolicy(maximum_attempts=3)
+                )
+                
+                workflow.logger.info(f"Intelligent mockup generation completed for job {job_id}")
+                workflow.logger.info(f"Generated {len(mockup_results)} mockups, {failed_count} failed")
+                
+                return {
+                    'job_id': job_id,
+                    'status': 'completed',
+                    'mockup_results': mockup_results,
+                    'total_generated': len(mockup_results),
+                    'total_failed': failed_count
+                }
+            else:
+                # All templates failed
+                await workflow.execute_activity(
+                    update_intelligent_job_status,
+                    args=[job_id, {
+                        'status': 'failed',
+                        'error_message': f'Failed to generate mockups for all {len(templates)} templates'
                     }],
                     start_to_close_timeout=timedelta(seconds=30),
                     retry_policy=RetryPolicy(maximum_attempts=1)
@@ -369,48 +538,8 @@ class IntelligentMockupGenerationWorkflow:
                 return {
                     'job_id': job_id,
                     'status': 'failed',
-                    'error': processing_result.get('error', 'Unknown error')
+                    'error': 'Failed to generate any mockups'
                 }
-            
-            # Step 3: Create the final mockup
-            result_url = await workflow.execute_activity(
-                create_intelligent_mockup,
-                args=[
-                    processing_result['temp_artwork_url'],
-                    processing_result['temp_template_url'],
-                    processing_result['best_region'],
-                    processing_result['template_size'],
-                    job_id
-                ],
-                start_to_close_timeout=timedelta(minutes=3),  # Increased timeout
-                retry_policy=RetryPolicy(
-                    maximum_attempts=2,
-                    backoff_coefficient=2.0
-                )
-            )
-            
-            # Step 4: Update final status
-            await workflow.execute_activity(
-                update_intelligent_job_status,
-                args=[job_id, {
-                    'status': 'completed',
-                    'result_url': result_url,
-                    'detected_regions': len(processing_result['regions']),
-                    'selected_region': processing_result['best_region']['label']
-                }],
-                start_to_close_timeout=timedelta(seconds=30),
-                retry_policy=RetryPolicy(maximum_attempts=3)
-            )
-            
-            workflow.logger.info(f"Intelligent mockup generation completed for job {job_id}")
-            
-            return {
-                'job_id': job_id,
-                'status': 'completed',
-                'result_url': result_url,
-                'detected_regions': len(processing_result['regions']),
-                'selected_region': processing_result['best_region']
-            }
             
         except Exception as e:
             workflow.logger.error(f"Workflow failed for job {job_id}: {str(e)}")

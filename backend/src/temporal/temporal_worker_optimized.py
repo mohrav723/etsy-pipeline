@@ -24,8 +24,10 @@ from src.temporal.mockup_generation_workflow import (
 from src.temporal.intelligent_mockup_generation_workflow_optimized import (
     IntelligentMockupGenerationWorkflow,
     update_intelligent_job_status,
+    get_all_mockup_templates,
     download_and_process_images,
-    create_intelligent_mockup
+    create_intelligent_mockup,
+    store_multiple_mockup_results
 )
 
 async def main():
@@ -53,8 +55,10 @@ async def main():
             mark_draft_failed,
             # Optimized intelligent mockup workflow activities
             update_intelligent_job_status,
+            get_all_mockup_templates,
             download_and_process_images,
-            create_intelligent_mockup
+            create_intelligent_mockup,
+            store_multiple_mockup_results
         ],
     )
     

@@ -1,0 +1,105 @@
+/* Smooth transitions for intelligent mockup cards */
+.intelligent-mockup-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.intelligent-mockup-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease-out, transform 300ms ease-out;
+}
+
+.intelligent-mockup-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.intelligent-mockup-exit-active {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 200ms ease-in, transform 200ms ease-in;
+}
+
+/* Smooth transitions for draft cards */
+.draft-card {
+  transition: all 0.3s ease;
+}
+
+.draft-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading animations */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.loading-placeholder {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Section transitions */
+.section-divider {
+  position: relative;
+  margin: 2rem 0;
+}
+
+.section-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #40444b, transparent);
+  transform: translateY(-50%);
+}
+
+/* Status badge animations */
+.status-badge {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Progress bar custom styles */
+.intelligent-mockup-progress .ant-progress-inner {
+  background-color: rgba(24, 144, 255, 0.1);
+}
+
+.intelligent-mockup-progress.timeout .ant-progress-inner {
+  background-color: rgba(255, 77, 79, 0.1);
+}
+
+/* Empty state animation */
+.empty-state-icon {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}

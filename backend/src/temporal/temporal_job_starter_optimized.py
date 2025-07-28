@@ -108,6 +108,11 @@ class TemporalJobStarter:
         data = document.to_dict()
         print(f"\n🎨 Processing new job: {job_id}")
         
+        # Convert Firestore timestamps to strings
+        for key, value in data.items():
+            if hasattr(value, 'isoformat'):
+                data[key] = value.isoformat()
+        
         # Start the workflow
         workflow_id = f"art-gen-{job_id}"
         await self.temporal_client.start_workflow(
@@ -123,6 +128,11 @@ class TemporalJobStarter:
         job_id = document.id
         data = document.to_dict()
         print(f"\n📷 Processing new mockup job: {job_id}")
+        
+        # Convert Firestore timestamps to strings
+        for key, value in data.items():
+            if hasattr(value, 'isoformat'):
+                data[key] = value.isoformat()
         
         # Add the job ID to the data
         data['job_id'] = job_id
@@ -145,19 +155,35 @@ class TemporalJobStarter:
         print(f"📸 Artwork URL: {data.get('artwork_url', 'N/A')}")
         print(f"🖼️  Mockup template: {data.get('mockup_template', 'N/A')}")
         
+        # Convert Firestore timestamps to strings to make them JSON serializable
+        for key, value in data.items():
+            if hasattr(value, 'isoformat'):
+                data[key] = value.isoformat()
+        
         # Add the job ID to the data if not present
         if 'job_id' not in data:
             data['job_id'] = job_id
         
         # Start the optimized workflow
         workflow_id = f"intelligent-mockup-{job_id}"
-        await self.temporal_client.start_workflow(
-            IntelligentMockupGenerationWorkflow.run,
-            data,
-            id=workflow_id,
-            task_queue="image-generation-queue",
-        )
-        print(f"✅ Started optimized intelligent mockup workflow: {workflow_id}")
+        try:
+            await self.temporal_client.start_workflow(
+                IntelligentMockupGenerationWorkflow.run,
+                data,
+                id=workflow_id,
+                task_queue="image-generation-queue",
+            )
+            print(f"✅ Started optimized intelligent mockup workflow: {workflow_id}")
+        except Exception as e:
+            print(f"❌ Failed to start workflow for job {job_id}: {e}")
+            # Update job status to failed
+            try:
+                self.db.collection('intelligent_mockup_jobs').document(job_id).update({
+                    'status': 'failed',
+                    'error': f'Failed to start workflow: {str(e)}'
+                })
+            except Exception as update_error:
+                print(f"❌ Failed to update job status: {update_error}")
 
 async def main():
     starter = TemporalJobStarter()

@@ -250,9 +250,9 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
         <MockupButton
           key="mockups"
           jobId={job.id}
-          imageUrl={job.generatedImageUrl}
+          imageUrl={job.generatedImageUrl || ''}
           prompt={job.prompt}
-          disabled={isRegenerating}
+          disabled={isRegenerating || !job.generatedImageUrl}
         />,
       ]}
     >
