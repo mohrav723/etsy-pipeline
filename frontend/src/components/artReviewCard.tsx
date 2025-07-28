@@ -23,6 +23,7 @@ import {
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import MockupButton from './MockupButton';
+import { RegenerationFormValues } from '../types';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -75,7 +76,7 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
       const values = await form.validateFields();
       setIsRegenerating(true);
       
-      console.log(`Creating new generation from job ${job.id} with parameters:`, values);
+      // Creating new generation from job
 
       // Create a new job entry instead of updating the existing one
       const newJobData = {
@@ -92,7 +93,6 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
       };
       
       const docRef = await addDoc(collection(db, 'jobs'), newJobData);
-      console.log(`New regeneration job created with ID: ${docRef.id}`);
       
       message.success('Regeneration job submitted successfully!');
       
@@ -101,9 +101,8 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
         setIsRegenerating(false);
       }, 30000); // 30 second timeout
       
-    } catch (error: any) {
-      console.error("Error creating regeneration job:", error);
-      message.error(`Failed to regenerate: ${error.message || 'Unknown error'}`);
+    } catch (error) {
+      message.error(`Failed to regenerate: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsRegenerating(false);
     }
   };
@@ -216,7 +215,6 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
                 objectFit: 'contain'
               }}
               onError={() => {
-                console.error('Failed to load image:', job.generatedImageUrl);
                 message.error('Failed to load image');
               }}
             />

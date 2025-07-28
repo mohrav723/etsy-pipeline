@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Card, Modal, Row, Col, Divider, Space, Pagination, Spin } from 'antd';
 import { db } from '../firebase';
-import { collection, getDocs, query, where, orderBy, limit, startAfter, DocumentSnapshot } from 'firebase/firestore';
-import { Job } from './artReviewCard';
+import { collection, getDocs, query, where, orderBy, limit, startAfter, DocumentSnapshot, Timestamp } from 'firebase/firestore';
+import { Job } from '../types';
 import MockupButton from './MockupButton';
 
 const { Title, Text } = Typography;
@@ -43,7 +43,7 @@ const HistoryTab = ({}: HistoryTabProps) => {
       });
       setTotalJobs(count);
     } catch (error) {
-      console.error('Error fetching total count:', error);
+      // Error fetching total count
     }
   };
 
@@ -91,7 +91,7 @@ const HistoryTab = ({}: HistoryTabProps) => {
       }
       
     } catch (error) {
-      console.error('Error fetching jobs:', error);
+      // Error fetching jobs
     } finally {
       setLoading(false);
     }
@@ -110,7 +110,7 @@ const HistoryTab = ({}: HistoryTabProps) => {
   };
 
   // Helper function to format date from Firebase timestamp
-  const formatDate = (timestamp: any): string => {
+  const formatDate = (timestamp: Timestamp | Date | null): string => {
     if (!timestamp) return 'Unknown Date';
     
     let date: Date;

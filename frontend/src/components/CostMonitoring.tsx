@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, where, Timestamp } from 'firebase/firestore';
 import ErrorBoundary from './ErrorBoundary';
 
 type CostRecord = {
   id: string;
-  job_id: string;
-  service: string;
-  cost_usd: number;
-  timestamp: any;
-  details: any;
+  jobId: string;
+  costType: 'bfl_generation' | 'storage_upload' | 'object_detection' | 'perspective_transform';
+  amount: number;
+  timestamp: Timestamp;
+  details: {
+    model?: string;
+    steps?: number;
+    success?: boolean;
+    sizeBytes?: number;
+    operation?: string;
+  };
 };
 
 type CostSummary = {
@@ -43,8 +49,11 @@ const CostMonitoring = () => {
             const data = doc.data();
             costsFromFirestore.push({ 
               id: doc.id, 
-              ...data,
-              timestamp: data.timestamp?.toDate?.() || new Date()
+              jobId: data.job_id || data.jobId,
+              costType: data.cost_type || data.costType,
+              amount: data.cost_usd || data.amount,
+              timestamp: data.timestamp,
+              details: data.details || {}
             } as CostRecord);
           });
           
@@ -53,15 +62,15 @@ const CostMonitoring = () => {
           setIsLoading(false);
           setError(null);
         }, (error) => {
-          console.error('Error loading costs:', error);
+          // Error handled via state
           setError('Failed to load cost data');
           setIsLoading(false);
         });
 
         return unsubscribe;
-      } catch (error: any) {
-        console.error('Error setting up cost listener:', error);
-        setError(`Setup error: ${error.message}`);
+      } catch (error) {
+        // Error handling for setup
+        setError(`Setup error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setIsLoading(false);
         return () => {};
       }
@@ -83,10 +92,10 @@ const CostMonitoring = () => {
     let storageTotal = 0;
 
     recentCosts.forEach(cost => {
-      if (cost.service === 'bfl_api') {
-        bflTotal += cost.cost_usd;
-      } else if (cost.service === 'google_storage') {
-        storageTotal += cost.cost_usd;
+      if (cost.costType === 'bfl_generation') {
+        bflTotal += cost.amount;
+      } else if (cost.costType === 'storage_upload') {
+        storageTotal += cost.amount;
       }
     });
 
@@ -117,19 +126,23 @@ const CostMonitoring = () => {
     }).format(date);
   };
 
-  const getServiceIcon = (service: string) => {
-    switch (service) {
-      case 'bfl_api': return '🎨';
-      case 'google_storage': return '☁️';
+  const getServiceIcon = (costType: string) => {
+    switch (costType) {
+      case 'bfl_generation': return '🎨';
+      case 'storage_upload': return '☁️';
+      case 'object_detection': return '🔍';
+      case 'perspective_transform': return '🖼️';
       default: return '💰';
     }
   };
 
-  const getServiceName = (service: string) => {
-    switch (service) {
-      case 'bfl_api': return 'BFL API';
-      case 'google_storage': return 'Google Storage';
-      default: return service;
+  const getServiceName = (costType: string) => {
+    switch (costType) {
+      case 'bfl_generation': return 'BFL API';
+      case 'storage_upload': return 'Storage Upload';
+      case 'object_detection': return 'Object Detection';
+      case 'perspective_transform': return 'Perspective Transform';
+      default: return costType;
     }
   };
 
@@ -336,19 +349,19 @@ const CostMonitoring = () => {
                     }}
                   >
                     <div style={styles.costLeft}>
-                      <span>{getServiceIcon(cost.service)}</span>
+                      <span>{getServiceIcon(cost.costType)}</span>
                       <div>
                         <div style={styles.costService}>
-                          {getServiceName(cost.service)}
+                          {getServiceName(cost.costType)}
                         </div>
                         <div style={styles.costDetails}>
-                          {formatDate(new Date(cost.timestamp))} • Job: {cost.job_id.slice(0, 8)}...
+                          {formatDate(cost.timestamp.toDate())} • Job: {cost.jobId.slice(0, 8)}...
                           {cost.details?.steps && ` • ${cost.details.steps} steps`}
                         </div>
                       </div>
                     </div>
                     <div style={styles.costAmount}>
-                      {formatCurrency(cost.cost_usd)}
+                      {formatCurrency(cost.amount)}
                     </div>
                   </div>
                 ))

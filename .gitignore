@@ -30,6 +30,7 @@ backend/scripts
 *.log
 .env
 .claude
+docs
 
 # Project-specific files to keep local only
 CLAUDE.md 

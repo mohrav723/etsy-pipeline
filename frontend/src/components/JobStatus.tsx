@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { JobStatus as JobStatusType } from '../types';
 
 type JobStatusProps = {
   className?: string;
@@ -8,9 +9,9 @@ type JobStatusProps = {
 
 type JobUpdate = {
   id: string;
-  status: string;
+  status: JobStatusType;
   prompt: string;
-  createdAt: any;
+  createdAt: Timestamp;
 };
 
 const JobStatus = ({ className }: JobStatusProps) => {
@@ -43,29 +44,29 @@ const JobStatus = ({ className }: JobStatusProps) => {
     return () => unsubscribe();
   }, []);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: JobStatusType) => {
     switch (status) {
       case 'pending_art_generation': return '#ffa500';
       case 'processing': return '#5865f2';
       case 'pending_review': return '#57f287';
       case 'approved': return '#00ff00';
-      case 'error': return '#ed4245';
+      case 'failed': return '#ed4245';
       default: return '#99aab5';
     }
   };
 
-  const getStatusEmoji = (status: string) => {
+  const getStatusEmoji = (status: JobStatusType) => {
     switch (status) {
       case 'pending_art_generation': return '⏳';
       case 'processing': return '🔄';
       case 'pending_review': return '👀';
       case 'approved': return '✅';
-      case 'error': return '❌';
+      case 'failed': return '❌';
       default: return '📝';
     }
   };
 
-  const formatStatus = (status: string) => {
+  const formatStatus = (status: JobStatusType) => {
     return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 

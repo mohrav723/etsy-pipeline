@@ -30,8 +30,6 @@ const MockupButton: React.FC<MockupButtonProps> = ({
   const handleGenerateMockups = async () => {
     setIsGeneratingMockups(true);
     
-    console.log(`Generating mockups for job ${jobId}...`);
-    
     try {
       // First, check if there are available mockup templates
       const mockupsQuery = query(collection(db, 'mockups'));
@@ -53,15 +51,12 @@ const MockupButton: React.FC<MockupButtonProps> = ({
       };
 
       const docRef = await addDoc(collection(db, 'mockup_jobs'), mockupJobData);
-      console.log(`Mockup generation job created with ID: ${docRef.id}`);
       
       // Auto-approve the image when generating mockups
       try {
         const jobRef = doc(db, 'jobs', jobId);
         await updateDoc(jobRef, { status: 'approved' });
-        console.log(`Auto-approved job ${jobId} when generating mockups`);
-      } catch (approveError: any) {
-        console.warn(`Could not auto-approve job ${jobId}:`, approveError);
+      } catch (approveError) {
         // Don't fail the whole operation if approval fails
       }
       
@@ -72,9 +67,8 @@ const MockupButton: React.FC<MockupButtonProps> = ({
         message.info('Check the Drafts tab to see your mockup progress!');
       }, 2000);
       
-    } catch (error: any) {
-      console.error("Error generating mockups:", error);
-      message.error(`Failed to generate mockups: ${error.message || 'Unknown error'}`);
+    } catch (error) {
+      message.error(`Failed to generate mockups: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsGeneratingMockups(false);
     }

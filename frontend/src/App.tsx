@@ -36,11 +36,9 @@ function AppContent() {
       const jobsFromFirestore: Job[] = [];
       snapshot.forEach(doc => {
         const data = doc.data();
-        console.log("Most recent job:", doc.id, data);
         jobsFromFirestore.push({ id: doc.id, ...data } as Job);
       });
       
-      console.log("Latest job for review:", jobsFromFirestore);
       setReviewJobs(jobsFromFirestore);
       
       // Clear loading state when a new job appears for review

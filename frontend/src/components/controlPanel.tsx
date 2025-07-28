@@ -18,6 +18,8 @@ import { ThunderboltOutlined, LoadingOutlined } from '@ant-design/icons';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import JobStatus from './JobStatus';
+import { GenerationFormValues } from '../types';
+import { ErrorService } from '../services/errorService';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -27,11 +29,10 @@ const ControlPanel = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { setIsGenerating } = useGeneration();
 
-  const handleGenerateClick = async (values: any) => {
+  const handleGenerateClick = async (values: GenerationFormValues & { aspectRatio?: string; safetyTolerance?: number; promptUpsampling?: boolean }) => {
     setIsLoading(true);
     setIsGenerating(true);
     
-    console.log("Submitting new job to Firestore...");
     try {
       const docRef = await addDoc(collection(db, "jobs"), {
         status: 'pending_art_generation',
@@ -51,16 +52,15 @@ const ControlPanel = () => {
       // Keep showing loading state until image is generated
       // The loading state will be cleared when a new job appears in pending_review
       
-    } catch (e: any) {
-      console.error("Error adding document: ", e);
-      message.error(`Failed to submit job: ${e.message || 'Unknown error'}`);
+    } catch (e) {
+      ErrorService.showError(e, 'Job submission');
       setIsGenerating(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleFormFinish = (values: any) => {
+  const handleFormFinish = (values: GenerationFormValues & { aspectRatio?: string; safetyTolerance?: number; promptUpsampling?: boolean }) => {
     handleGenerateClick(values);
   };
 

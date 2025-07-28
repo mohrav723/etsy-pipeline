@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where, Timestamp } from 'firebase/firestore';
 import { Card, Typography, Empty, Spin, Image } from 'antd';
 import { FileImageOutlined } from '@ant-design/icons';
 
@@ -12,7 +12,7 @@ type Draft = {
   mockupImageUrl: string;
   mockupName: string;
   originalJobId: string;
-  createdAt: any;
+  createdAt: Timestamp;
   status: 'processing' | 'completed' | 'failed';
 };
 
