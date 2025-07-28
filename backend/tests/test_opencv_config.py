@@ -87,9 +87,13 @@ class TestOpenCVObjectDetectionConfig:
     def test_config_validation_invalid_weights(self):
         """Test validation with invalid scoring weights."""
         config = OpenCVObjectDetectionConfig(
-            size_weight=0.5,
-            position_weight=0.3,
-            confidence_weight=0.5  # Sum > 1.0
+            scoring_weights={
+                'confidence': 0.5,
+                'size': 0.3,
+                'aspect_ratio': 0.2,
+                'position': 0.2,
+                'edge_distance': 0.1  # Sum = 1.3 > 1.0
+            }
         )
         with pytest.raises(ValueError, match="Scoring weights must sum to 1.0"):
             config.validate()

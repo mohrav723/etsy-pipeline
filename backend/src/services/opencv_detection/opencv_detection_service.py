@@ -23,6 +23,7 @@ from .detectors import (
     TemplateMatchingDetector,
     FallbackDetector
 )
+from .performance_monitor import get_performance_monitor
 
 logger = logging.getLogger(__name__)
 
@@ -58,12 +59,13 @@ class OpenCVObjectDetectionService:
                 except Exception as e:
                     logger.error(f"Failed to initialize {name} detector: {e}")
                     
-    def detect_objects(self, image: Image.Image) -> List[BoundingBox]:
+    def detect_objects(self, image: Image.Image, job_id: Optional[str] = None) -> List[BoundingBox]:
         """
         Detect objects in the given image using all enabled detectors.
         
         Args:
             image: PIL Image to analyze
+            job_id: Optional job identifier for metrics
             
         Returns:
             List of BoundingBox objects representing detected regions
@@ -72,46 +74,51 @@ class OpenCVObjectDetectionService:
             ValueError: If image is invalid
             Exception: If all detectors fail
         """
-        start_time = time.time()
-        
-        # Validate input image
+        # Validate input image first
         if not validate_image(image):
             raise ValueError("Invalid image provided")
             
-        # Convert image for OpenCV processing
-        cv_image = pil_to_cv2(image)
+        monitor = get_performance_monitor()
         
-        # Run detectors in parallel if enabled
-        all_detections = []
-        
-        if self.config.parallel_processing and len(self._detectors) > 1:
-            all_detections = self._run_detectors_parallel(cv_image)
-        else:
-            all_detections = self._run_detectors_sequential(cv_image)
+        with monitor.measure_detection(job_id=job_id, image_size=image.size):
+            # Convert image for OpenCV processing
+            with monitor.measure_phase('preprocessing'):
+                cv_image = pil_to_cv2(image)
             
-        # Merge and rank detections
-        merged_detections = self._merge_overlapping_regions(all_detections)
-        ranked_detections = self._rank_regions(merged_detections, image.size)
-        
-        # Apply max detections limit
-        final_detections = ranked_detections[:self.config.max_detections]
-        
-        elapsed_time = time.time() - start_time
-        logger.info(f"Detected {len(final_detections)} regions in {elapsed_time:.2f}s")
-        
-        return final_detections
+            # Run detectors in parallel if enabled
+            all_detections = []
+            
+            if self.config.parallel_processing and len(self._detectors) > 1:
+                all_detections = self._run_detectors_parallel(cv_image)
+            else:
+                all_detections = self._run_detectors_sequential(cv_image)
+                
+            # Merge and rank detections
+            with monitor.measure_phase('merging'):
+                merged_detections = self._merge_overlapping_regions(all_detections)
+                
+            with monitor.measure_phase('ranking'):
+                ranked_detections = self._rank_regions(merged_detections, image.size)
+            
+            # Apply max detections limit
+            final_detections = ranked_detections[:self.config.max_detections]
+            
+            # Record metrics
+            monitor.record_regions_detected(len(final_detections))
+            
+            return final_detections
         
     def _run_detectors_sequential(self, cv_image: np.ndarray) -> List[BoundingBox]:
         """Run all detectors sequentially."""
         all_detections = []
+        monitor = get_performance_monitor()
         
         for name, detector in self._detectors.items():
             try:
-                detector_start = time.time()
-                detections = detector.detect(cv_image)
-                detector_time = time.time() - detector_start
+                with monitor.measure_phase(f'{name}_detector'):
+                    detections = detector.detect(cv_image)
                 
-                logger.debug(f"{name} detector found {len(detections)} regions in {detector_time:.2f}s")
+                logger.debug(f"{name} detector found {len(detections)} regions")
                 all_detections.extend(detections)
                 
                 # Early termination if we have enough high-confidence detections
@@ -279,7 +286,7 @@ class OpenCVObjectDetectionService:
         # Return sorted detections
         return [detection for _, detection in scored_detections]
         
-    def find_suitable_regions(self, image: Image.Image) -> List[BoundingBox]:
+    def find_suitable_regions(self, image: Image.Image, job_id: Optional[str] = None) -> List[BoundingBox]:
         """
         Find regions in the image that are suitable for artwork placement.
         
@@ -287,6 +294,7 @@ class OpenCVObjectDetectionService:
         
         Args:
             image: PIL Image of the mockup template
+            job_id: Optional job identifier for metrics
             
         Returns:
             List of BoundingBox objects representing suitable regions
@@ -296,7 +304,7 @@ class OpenCVObjectDetectionService:
             ObjectDetectionError: If detection fails
         """
         try:
-            detected_regions = self.detect_objects(image)
+            detected_regions = self.detect_objects(image, job_id=job_id)
             
             if not detected_regions:
                 # Use fallback detector if enabled and no regions found
