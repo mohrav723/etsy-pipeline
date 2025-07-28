@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, where, Timestamp, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { Card, Typography, Empty, Spin, Image, Divider, message } from 'antd';
-import { FileImageOutlined, RobotOutlined } from '@ant-design/icons';
+import { collection, onSnapshot, query, orderBy, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { Typography, Empty, Spin, message } from 'antd';
+import { RobotOutlined } from '@ant-design/icons';
 import { IntelligentMockupJob } from '../types';
 import IntelligentMockupCard from './IntelligentMockupCard';
 import IntelligentMockupSkeleton from './IntelligentMockupSkeleton';
@@ -10,40 +10,11 @@ import IntelligentMockupHelp from './IntelligentMockupHelp';
 import { ErrorService } from '../services/errorService';
 import './DraftsTab.css';
 
-const { Text, Title } = Typography;
-
-type Draft = {
-  id: string;
-  originalImageUrl: string;
-  mockupImageUrl: string;
-  mockupName: string;
-  originalJobId: string;
-  createdAt: Timestamp;
-  status: 'processing' | 'completed' | 'failed';
-};
+const { Title } = Typography;
 
 const DraftsTab = () => {
-  const [drafts, setDrafts] = useState<Draft[]>([]);
   const [intelligentJobs, setIntelligentJobs] = useState<IntelligentMockupJob[]>([]);
-  const [loading, setLoading] = useState(true);
   const [loadingIntelligent, setLoadingIntelligent] = useState(true);
-
-  useEffect(() => {
-    // Listen to regular drafts
-    const draftsCollection = collection(db, 'drafts');
-    const q = query(draftsCollection, orderBy('createdAt', 'desc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const draftsFromFirestore: Draft[] = [];
-      snapshot.forEach(doc => {
-        draftsFromFirestore.push({ id: doc.id, ...doc.data() } as Draft);
-      });
-      setDrafts(draftsFromFirestore);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     // Listen to intelligent mockup jobs
@@ -85,17 +56,6 @@ const DraftsTab = () => {
       fontSize: '1.2rem',
       fontWeight: 'bold',
       marginBottom: '1rem'
-    },
-    draftsGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-      gap: '1rem'
-    },
-    draftCard: {
-      backgroundColor: '#23272a',
-      border: '1px solid #40444b',
-      borderRadius: '8px',
-      overflow: 'hidden'
     },
     imageContainer: {
       display: 'flex',
@@ -168,31 +128,6 @@ const DraftsTab = () => {
     }
   };
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'processing':
-        return { ...styles.status, ...styles.statusProcessing };
-      case 'completed':
-        return { ...styles.status, ...styles.statusCompleted };
-      case 'failed':
-        return { ...styles.status, ...styles.statusFailed };
-      default:
-        return styles.status;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'processing':
-        return '⏳ Processing';
-      case 'completed':
-        return '✅ Completed';
-      case 'failed':
-        return '❌ Failed';
-      default:
-        return status;
-    }
-  };
 
   // Handle retry for intelligent mockups
   const handleRetryIntelligentMockup = async (jobId: string) => {
@@ -225,7 +160,7 @@ const DraftsTab = () => {
     }
   };
 
-  if (loading && loadingIntelligent) {
+  if (loadingIntelligent) {
     return (
       <div style={styles.loadingContainer}>
         <Spin size="large" />
@@ -233,125 +168,36 @@ const DraftsTab = () => {
     );
   }
 
-  const hasAnyContent = drafts.length > 0 || intelligentJobs.length > 0;
-
   return (
     <div style={styles.container}>
-      {/* Intelligent Mockups Section */}
-      {(intelligentJobs.length > 0 || loadingIntelligent) && (
-        <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Title level={3} style={styles.header}>
-              <RobotOutlined style={{ marginRight: '8px' }} />
-              Intelligent Mockups {!loadingIntelligent && `(${intelligentJobs.length})`}
-            </Title>
-            <IntelligentMockupHelp />
-          </div>
-          <div style={{ marginBottom: '2rem' }}>
-            {loadingIntelligent ? (
-              <>
-                <IntelligentMockupSkeleton />
-                <IntelligentMockupSkeleton />
-              </>
-            ) : (
-              <div className="intelligent-mockup-container">
-                {intelligentJobs.map((job) => (
-                  <div key={job.id} className="intelligent-mockup-wrapper">
-                    <IntelligentMockupCard 
-                      job={job} 
-                      onRetry={handleRetryIntelligentMockup}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {intelligentJobs.length > 0 && <Divider className="section-divider" style={{ borderColor: '#40444b' }} />}
-        </>
-      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Title level={3} style={styles.header}>
+          <RobotOutlined style={{ marginRight: '8px' }} />
+          AI-Powered Mockups {`(${intelligentJobs.length})`}
+        </Title>
+        <IntelligentMockupHelp />
+      </div>
 
-      {/* Simple Mockups Section */}
-      <Title level={3} style={styles.header}>
-        <FileImageOutlined style={{ marginRight: '8px' }} />
-        Simple Mockups ({drafts.length})
-      </Title>
-
-      {!hasAnyContent ? (
+      {intelligentJobs.length === 0 ? (
         <div style={styles.emptyState}>
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
               <span style={{ color: '#99aab5' }}>
-                No draft mockups yet. Approve images from the Review tab to generate mockups.
+                No AI mockups yet. Generate mockups from the Review tab to see them here.
               </span>
             }
           />
         </div>
-      ) : drafts.length === 0 ? (
-        <Text type="secondary" style={{ textAlign: 'center', display: 'block', padding: '20px' }}>
-          No simple mockups yet. Check the intelligent mockups above or generate new ones.
-        </Text>
       ) : (
-        <div style={styles.draftsGrid}>
-          {drafts.map((draft) => (
-            <Card key={draft.id} style={styles.draftCard}>
-              <div style={styles.imageContainer}>
-                <div style={styles.imageWrapper}>
-                  <div style={styles.imageLabel}>Original</div>
-                  <Image
-                    src={draft.originalImageUrl}
-                    alt="Original image"
-                    style={styles.image}
-                    preview={true}
-                  />
-                </div>
-                <div style={styles.imageWrapper}>
-                  <div style={styles.imageLabel}>Mockup</div>
-                  {draft.status === 'processing' ? (
-                    <div style={{
-                      ...styles.image,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#2f3136'
-                    }}>
-                      <Spin />
-                    </div>
-                  ) : draft.status === 'completed' ? (
-                    <Image
-                      src={draft.mockupImageUrl}
-                      alt="Mockup"
-                      style={styles.image}
-                      preview={true}
-                    />
-                  ) : (
-                    <div style={{
-                      ...styles.image,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#2f3136',
-                      color: '#ed4245'
-                    }}>
-                      Failed
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div style={styles.cardInfo}>
-                <div style={styles.mockupName}>{draft.mockupName}</div>
-                <div style={getStatusStyle(draft.status)}>
-                  {getStatusText(draft.status)}
-                </div>
-                <div style={styles.date}>
-                  {draft.createdAt?.toDate ? 
-                    draft.createdAt.toDate().toLocaleDateString() : 
-                    'Unknown date'
-                  }
-                </div>
-              </div>
-            </Card>
+        <div className="intelligent-mockup-container">
+          {intelligentJobs.map((job) => (
+            <div key={job.id} className="intelligent-mockup-wrapper">
+              <IntelligentMockupCard 
+                job={job} 
+                onRetry={handleRetryIntelligentMockup}
+              />
+            </div>
           ))}
         </div>
       )}

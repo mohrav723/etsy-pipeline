@@ -18,7 +18,7 @@ from src.temporal.intelligent_mockup_generation_workflow import (
     download_artwork_and_template,
     detect_suitable_regions,
     transform_artwork_to_region,
-    compose_final_mockup,
+    compose_and_store_final_mockup,
     store_intelligent_mockup_result,
     IntelligentMockupJob
 )
@@ -233,7 +233,7 @@ class TestIntelligentMockupActivities:
         mock_cost_tracker.log_storage_cost.assert_called_once()
     
     @patch('src.services.perspective_transform.PerspectiveTransformService')
-    def test_compose_final_mockup(self, mock_transform_service_class):
+    def test_compose_and_store_final_mockup(self, mock_transform_service_class):
         """Test composing final mockup image."""
         # Mock perspective transformation service
         mock_transform_service = Mock()
@@ -248,7 +248,7 @@ class TestIntelligentMockupActivities:
         transformed_bytes = self._image_to_bytes(transformed_artwork)
         
         # Test the activity
-        result = asyncio.run(compose_final_mockup(
+        result = asyncio.run(compose_and_store_final_mockup(
             self.template_bytes,
             transformed_bytes,
             self.mock_region_data,
@@ -342,7 +342,7 @@ class TestIntelligentMockupWorkflow:
                 return [self.mock_region_data]
             elif activity_func.__name__ == 'transform_artwork_to_region':
                 return b'transformed_artwork_data'
-            elif activity_func.__name__ == 'compose_final_mockup':
+            elif activity_func.__name__ == 'compose_and_store_final_mockup':
                 return b'final_mockup_data'
             elif activity_func.__name__ == 'store_intelligent_mockup_result':
                 return 'https://storage.url/result.png'
@@ -422,7 +422,6 @@ class TestWorkflowIntegration:
         try:
             # Import existing activities
             from src.temporal.simple_workflow import generate_and_store_image, update_firestore_job
-            from src.temporal.mockup_generation_workflow import get_available_mockups, create_draft_entry
             
             # Import new activities
             from src.temporal.intelligent_mockup_generation_workflow import (
@@ -430,20 +429,18 @@ class TestWorkflowIntegration:
                 download_artwork_and_template,
                 detect_suitable_regions,
                 transform_artwork_to_region,
-                compose_final_mockup,
+                compose_and_store_final_mockup,
                 store_intelligent_mockup_result
             )
             
             # Verify all activities are callable
             assert callable(generate_and_store_image)
             assert callable(update_firestore_job)
-            assert callable(get_available_mockups)
-            assert callable(create_draft_entry)
             assert callable(update_intelligent_job_status)
             assert callable(download_artwork_and_template)
             assert callable(detect_suitable_regions)
             assert callable(transform_artwork_to_region)
-            assert callable(compose_final_mockup)
+            assert callable(compose_and_store_final_mockup)
             assert callable(store_intelligent_mockup_result)
             
         except ImportError as e:
