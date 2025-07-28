@@ -24,6 +24,8 @@ import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import MockupButton from './MockupButton';
 import { RegenerationFormValues } from '../types';
+import { REGENERATION_TIMEOUT_MS, SLIDER_RANGES, ASPECT_RATIOS, JOB_STATUS } from '../constants';
+import { ErrorService } from '../services/errorService';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -50,6 +52,7 @@ type ArtReviewCardProps = {
 const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [form] = Form.useForm();
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   
   // Initialize form with current job values
   React.useEffect(() => {
@@ -70,6 +73,15 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
       setIsRegenerating(false);
     }
   }, [job.generatedImageUrl]);
+  
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleRegenerate = async () => {
     try {
@@ -80,7 +92,7 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
 
       // Create a new job entry instead of updating the existing one
       const newJobData = {
-        status: 'pending_art_generation',
+        status: JOB_STATUS.PENDING_ART,
         prompt: values.prompt,
         aspectRatio: values.aspectRatio,
         steps: values.steps,
@@ -97,12 +109,13 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
       message.success('Regeneration job submitted successfully!');
       
       // Set a timeout to clear loading state if no new image appears
-      setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         setIsRegenerating(false);
-      }, 30000); // 30 second timeout
+        timeoutRef.current = null;
+      }, REGENERATION_TIMEOUT_MS);
       
     } catch (error) {
-      message.error(`Failed to regenerate: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      ErrorService.showError(error, 'Art regeneration');
       setIsRegenerating(false);
     }
   };
@@ -134,34 +147,36 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
 
           <Form.Item label="Aspect Ratio" name="aspectRatio">
             <Select>
-              <Select.Option value="16:9">16:9 (Landscape)</Select.Option>
-              <Select.Option value="1:1">1:1 (Square)</Select.Option>
-              <Select.Option value="9:16">9:16 (Portrait)</Select.Option>
+              {ASPECT_RATIOS.map(ratio => (
+                <Select.Option key={ratio.value} value={ratio.value}>
+                  {ratio.label}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
 
           <Form.Item label="Steps" name="steps">
             <Slider
-              min={1}
-              max={50}
+              min={SLIDER_RANGES.steps.min}
+              max={SLIDER_RANGES.steps.max}
               tooltip={{ formatter: (value) => `${value} steps` }}
             />
           </Form.Item>
 
           <Form.Item label="Guidance" name="guidance">
             <Slider
-              min={1.5}
-              max={5}
-              step={0.1}
+              min={SLIDER_RANGES.guidance.min}
+              max={SLIDER_RANGES.guidance.max}
+              step={SLIDER_RANGES.guidance.step}
               tooltip={{ formatter: (value) => `${value}` }}
             />
           </Form.Item>
 
           <Form.Item label="Safety Tolerance" name="safetyTolerance">
             <Slider
-              min={1}
-              max={6}
-              step={1}
+              min={SLIDER_RANGES.safetyTolerance.min}
+              max={SLIDER_RANGES.safetyTolerance.max}
+              step={SLIDER_RANGES.safetyTolerance.step}
               tooltip={{ formatter: (value) => `Level ${value}` }}
             />
           </Form.Item>
@@ -215,7 +230,7 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
                 objectFit: 'contain'
               }}
               onError={() => {
-                message.error('Failed to load image');
+                ErrorService.showError(new Error('Failed to load image'), 'Image loading');
               }}
             />
           )}

@@ -20,6 +20,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import JobStatus from './JobStatus';
 import { GenerationFormValues } from '../types';
 import { ErrorService } from '../services/errorService';
+import { GENERATION_DEFAULTS, MIN_PROMPT_LENGTH, SLIDER_RANGES, ASPECT_RATIOS, JOB_STATUS } from '../constants';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -65,7 +66,7 @@ const ControlPanel = () => {
   };
 
   const handleFormFinishFailed = () => {
-    message.error('Please fill in all required fields correctly.');
+    ErrorService.showError(new Error('Please fill in all required fields correctly'), 'Form validation');
   };
 
   return (
@@ -123,9 +124,11 @@ const ControlPanel = () => {
 
         <Form.Item label="Aspect Ratio" name="aspectRatio" style={{ marginBottom: '8px' }}>
           <Select>
-            <Select.Option value="16:9">16:9 (Landscape)</Select.Option>
-            <Select.Option value="1:1">1:1 (Square)</Select.Option>
-            <Select.Option value="9:16">9:16 (Portrait)</Select.Option>
+            {ASPECT_RATIOS.map(ratio => (
+              <Select.Option key={ratio.value} value={ratio.value}>
+                {ratio.label}
+              </Select.Option>
+            ))}
           </Select>
         </Form.Item>
 
@@ -158,9 +161,9 @@ const ControlPanel = () => {
 
         <Form.Item label="Safety Tolerance" name="safetyTolerance" style={{ marginBottom: '8px' }}>
           <Slider
-            min={0}
-            max={6}
-            step={1}
+            min={SLIDER_RANGES.safetyTolerance.min}
+            max={SLIDER_RANGES.safetyTolerance.max}
+            step={SLIDER_RANGES.safetyTolerance.step}
             tooltip={{ formatter: (value) => `Level ${value}` }}
           />
         </Form.Item>

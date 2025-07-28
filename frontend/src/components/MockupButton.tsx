@@ -3,6 +3,8 @@ import { Button, message } from 'antd';
 import { FileImageOutlined, LoadingOutlined } from '@ant-design/icons';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { ErrorService } from '../services/errorService';
+import { MOCKUP_STATUS, JOB_STATUS } from '../constants';
 
 type MockupButtonProps = {
   jobId: string;
@@ -43,7 +45,7 @@ const MockupButton: React.FC<MockupButtonProps> = ({
 
       // Create a mockup generation job that will trigger the Temporal workflow
       const mockupJobData = {
-        status: 'pending_mockup_generation',
+        status: MOCKUP_STATUS.PENDING,
         sourceJobId: jobId,
         sourceImageUrl: imageUrl,
         sourcePrompt: prompt,
@@ -55,7 +57,7 @@ const MockupButton: React.FC<MockupButtonProps> = ({
       // Auto-approve the image when generating mockups
       try {
         const jobRef = doc(db, 'jobs', jobId);
-        await updateDoc(jobRef, { status: 'approved' });
+        await updateDoc(jobRef, { status: JOB_STATUS.APPROVED });
       } catch (approveError) {
         // Don't fail the whole operation if approval fails
       }
@@ -68,7 +70,7 @@ const MockupButton: React.FC<MockupButtonProps> = ({
       }, 2000);
       
     } catch (error) {
-      message.error(`Failed to generate mockups: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      ErrorService.showError(error, 'Mockup generation');
     } finally {
       setIsGeneratingMockups(false);
     }

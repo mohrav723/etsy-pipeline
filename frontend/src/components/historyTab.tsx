@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import { collection, getDocs, query, where, orderBy, limit, startAfter, DocumentSnapshot, Timestamp } from 'firebase/firestore';
 import { Job } from '../types';
 import MockupButton from './MockupButton';
+import { JOBS_PER_PAGE, IMAGE_PREVIEW_HEIGHT, MODAL_IMAGE_MAX_HEIGHT } from '../constants';
 
 const { Title, Text } = Typography;
 
@@ -23,7 +24,6 @@ const HistoryTab = ({}: HistoryTabProps) => {
   const [lastVisible, setLastVisible] = useState<DocumentSnapshot | null>(null);
   const [pageSnapshots, setPageSnapshots] = useState<{ [key: number]: DocumentSnapshot | null }>({});
   
-  const JOBS_PER_PAGE = 20;
 
   // Fetch total count for pagination
   const fetchTotalCount = async () => {
@@ -221,7 +221,7 @@ const HistoryTab = ({}: HistoryTabProps) => {
                     <Card
                       hoverable
                       cover={
-                        <div style={{ height: '200px', overflow: 'hidden' }}>
+                        <div style={{ height: IMAGE_PREVIEW_HEIGHT, overflow: 'hidden' }}>
                           <img
                             src={job.generatedImageUrl}
                             alt="Generated art"
@@ -303,7 +303,7 @@ const HistoryTab = ({}: HistoryTabProps) => {
                   maxWidth: '100%',
                   height: 'auto',
                   borderRadius: '8px',
-                  maxHeight: '500px'
+                  maxHeight: MODAL_IMAGE_MAX_HEIGHT
                 }}
               />
             </div>

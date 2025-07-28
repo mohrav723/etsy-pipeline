@@ -3,6 +3,7 @@ import { db } from '../firebase';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Mockup } from '../types';
+import { FILE_SIZE_LIMIT_BYTES, ALLOWED_FILE_TYPES, IMAGE_PREVIEW_HEIGHT } from '../constants';
 
 const MockupTab = () => {
   const [mockups, setMockups] = useState<Mockup[]>([]);
@@ -40,15 +41,12 @@ const MockupTab = () => {
         const file = files[i];
         
         // Validate file type and size
-        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-        
-        if (!ALLOWED_TYPES.includes(file.type)) {
+        if (!ALLOWED_FILE_TYPES.includes(file.type)) {
           throw new Error(`File ${file.name} must be JPEG, PNG, or WebP format`);
         }
         
-        if (file.size > MAX_FILE_SIZE) {
-          throw new Error(`File ${file.name} is too large. Maximum size is 10MB`);
+        if (file.size > FILE_SIZE_LIMIT_BYTES) {
+          throw new Error(`File ${file.name} is too large. Maximum size is ${FILE_SIZE_LIMIT_BYTES / (1024 * 1024)}MB`);
         }
 
         // Create a reference to the file in Firebase Storage
@@ -173,7 +171,7 @@ const MockupTab = () => {
     },
     mockupImage: {
       width: '100%',
-      height: '200px',
+      height: IMAGE_PREVIEW_HEIGHT,
       objectFit: 'cover' as const
     },
     mockupInfo: {

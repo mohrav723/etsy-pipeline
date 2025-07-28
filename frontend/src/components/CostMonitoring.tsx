@@ -34,6 +34,8 @@ const CostMonitoring = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
     const loadCosts = () => {
       try {
         const costsCollection = collection(db, 'costs');
@@ -43,7 +45,7 @@ const CostMonitoring = () => {
           limit(100)
         );
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+        unsubscribe = onSnapshot(q, (snapshot) => {
           const costsFromFirestore: CostRecord[] = [];
           snapshot.forEach(doc => {
             const data = doc.data();
@@ -66,18 +68,19 @@ const CostMonitoring = () => {
           setError('Failed to load cost data');
           setIsLoading(false);
         });
-
-        return unsubscribe;
       } catch (error) {
         // Error handling for setup
         setError(`Setup error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setIsLoading(false);
-        return () => {};
       }
     };
 
-    const unsubscribe = loadCosts();
-    return () => unsubscribe();
+    loadCosts();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [selectedPeriod]);
 
   const calculateSummary = (allCosts: CostRecord[], days: number) => {
