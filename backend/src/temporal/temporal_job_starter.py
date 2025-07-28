@@ -16,6 +16,7 @@ if backend_path not in sys.path:
 
 from src.temporal.simple_workflow import SimpleImageWorkflow
 from src.temporal.mockup_generation_workflow import MockupGenerationWorkflow
+from src.temporal.intelligent_mockup_generation_workflow import IntelligentMockupGenerationWorkflow
 
 # Load environment variables like your current worker
 load_dotenv()
@@ -51,9 +52,15 @@ class TemporalJobStarter:
         mockup_jobs_query_ref = mockup_jobs_collection_ref.where(filter=firestore.FieldFilter('status', '==', 'pending_mockup_generation'))
         mockup_jobs_query_ref.on_snapshot(self.handle_mockup_changes)
         
+        # Listen for intelligent mockup jobs
+        intelligent_mockup_jobs_collection_ref = self.db.collection('intelligent_mockup_jobs')
+        intelligent_mockup_jobs_query_ref = intelligent_mockup_jobs_collection_ref.where(filter=firestore.FieldFilter('status', '==', 'pending'))
+        intelligent_mockup_jobs_query_ref.on_snapshot(self.handle_intelligent_mockup_changes)
+        
         print("🔥 Listening for Firestore changes...")
         print("📋 Watching for jobs with status: 'pending_art_generation'")
         print("🎨 Watching for mockup_jobs with status: 'pending_mockup_generation'")
+        print("🧠 Watching for intelligent_mockup_jobs with status: 'pending'")
         print("🌐 Temporal UI: http://localhost:8080")
         print("🛑 Press Ctrl+C to stop")
         
@@ -81,6 +88,16 @@ class TemporalJobStarter:
                 # Schedule the async task in the main event loop
                 asyncio.run_coroutine_threadsafe(
                     self.process_mockup_job(change.document),
+                    self.loop
+                )
+    
+    def handle_intelligent_mockup_changes(self, collection_snapshot, changes, read_time):
+        """Handle Firestore intelligent mockup job changes"""
+        for change in changes:
+            if change.type.name == 'ADDED':
+                # Schedule the async task in the main event loop
+                asyncio.run_coroutine_threadsafe(
+                    self.process_intelligent_mockup_job(change.document),
                     self.loop
                 )
     
@@ -174,6 +191,49 @@ class TemporalJobStarter:
                 print(f"📝 Updated mockup job {mockup_job_id} with error status")
             except Exception as update_error:
                 print(f"❌ Failed to update mockup job error status: {update_error}")
+    
+    async def process_intelligent_mockup_job(self, doc_snapshot):
+        """Process an intelligent mockup job by starting the AI-powered Temporal workflow"""
+        intelligent_job_id = doc_snapshot.id
+        intelligent_job_data = doc_snapshot.to_dict()
+        
+        # Prepare data for the intelligent mockup generation workflow
+        workflow_data = {
+            'job_id': intelligent_job_id,
+            'artwork_url': intelligent_job_data.get('artwork_url'),
+            'mockup_template': intelligent_job_data.get('mockup_template'),
+            'original_job_id': intelligent_job_data.get('original_job_id')
+        }
+        
+        print(f"\n🧠 New intelligent mockup job detected: {intelligent_job_id}")
+        print(f"🎨 Artwork URL: {workflow_data['artwork_url']}")
+        print(f"🖼️  Mockup template: {workflow_data['mockup_template']}")
+        
+        try:
+            # Start the intelligent mockup generation workflow
+            handle = await self.temporal_client.start_workflow(
+                IntelligentMockupGenerationWorkflow.run,
+                workflow_data,
+                id=f"intelligent-mockup-{intelligent_job_id}",  # Unique workflow ID
+                task_queue="image-generation-queue",
+            )
+            
+            print(f"✅ Intelligent mockup workflow started: {handle.id}")
+            print(f"🔗 View progress: http://localhost:8080/namespaces/default/workflows/{handle.id}")
+            
+        except Exception as e:
+            print(f"❌ Failed to start intelligent mockup workflow for {intelligent_job_id}: {e}")
+            
+            # Update intelligent mockup job with error
+            try:
+                intelligent_job_ref = self.db.collection('intelligent_mockup_jobs').document(intelligent_job_id)
+                intelligent_job_ref.update({
+                    'status': 'failed',
+                    'error_message': f"Failed to start workflow: {str(e)}"
+                })
+                print(f"📝 Updated intelligent mockup job {intelligent_job_id} with error status")
+            except Exception as update_error:
+                print(f"❌ Failed to update intelligent mockup job error status: {update_error}")
 
 async def main():
     starter = TemporalJobStarter()

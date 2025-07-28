@@ -21,10 +21,12 @@ backend/src/__pycache__/
 backend/src/services/__pycache__/
 backend/src/temporal/__pycache__
 backend/tests/__pycache__
+backend/scripts
 
 # macOS
 .DS_Store
 
 # General
 *.log
-.env 
+.env
+.claude 

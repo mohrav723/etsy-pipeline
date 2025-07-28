@@ -1,5 +1,5 @@
 """
-Temporal worker that replaces your current backend/app.py
+Optimized Temporal worker with intelligent mockup improvements
 """
 import asyncio
 import os
@@ -21,14 +21,11 @@ from src.temporal.mockup_generation_workflow import (
     update_draft_with_mockup, 
     mark_draft_failed
 )
-from src.temporal.intelligent_mockup_generation_workflow import (
+from src.temporal.intelligent_mockup_generation_workflow_optimized import (
     IntelligentMockupGenerationWorkflow,
     update_intelligent_job_status,
-    download_artwork_and_template,
-    detect_suitable_regions,
-    transform_artwork_to_region,
-    compose_and_store_final_mockup,
-    store_intelligent_mockup_result
+    download_and_process_images,
+    create_intelligent_mockup
 )
 
 async def main():
@@ -54,23 +51,24 @@ async def main():
             generate_mockup_image,
             update_draft_with_mockup,
             mark_draft_failed,
-            # Intelligent mockup generation workflow activities
+            # Optimized intelligent mockup workflow activities
             update_intelligent_job_status,
-            download_artwork_and_template,
-            detect_suitable_regions,
-            transform_artwork_to_region,
-            compose_and_store_final_mockup,
-            store_intelligent_mockup_result
+            download_and_process_images,
+            create_intelligent_mockup
         ],
     )
     
-    print("🚀 Temporal worker started - listening for image generation jobs...")
+    print("🚀 Optimized Temporal worker started - listening for image generation jobs...")
     print("📊 Temporal UI available at: http://localhost:8080")
     print("🎯 Registered workflows:")
     print("   - SimpleImageWorkflow (simple art generation)")
     print("   - MockupGenerationWorkflow (simple mockup creation)")
-    print("   - IntelligentMockupGenerationWorkflow (AI-powered mockup creation)")
+    print("   - IntelligentMockupGenerationWorkflow (AI-powered mockup creation - OPTIMIZED)")
     print("🔧 Task queue: image-generation-queue")
+    print("✨ Optimizations:")
+    print("   - Reduced gRPC message sizes")
+    print("   - Increased AI processing timeouts")
+    print("   - Better error handling")
     
     # Run the worker
     await worker.run()

@@ -7,5 +7,6 @@ Pillow
 transformers
 torch
 opencv-python-headless
+timm
 psutil
 pytest
