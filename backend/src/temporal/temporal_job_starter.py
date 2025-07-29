@@ -90,6 +90,11 @@ class TemporalJobStarter:
         job_data = doc_snapshot.to_dict()
         job_data['job_id'] = job_id  # Add job_id to data
         
+        # Debug logging
+        print(f"DEBUG: job_id = {job_id}")
+        print(f"DEBUG: job_data keys before processing = {list(job_data.keys())}")
+        print(f"DEBUG: 'job_id' in job_data = {'job_id' in job_data}")
+        
         # Convert Firestore timestamps to ISO strings for JSON serialization
         if 'createdAt' in job_data and job_data['createdAt']:
             job_data['createdAt'] = job_data['createdAt'].isoformat()
@@ -98,6 +103,10 @@ class TemporalJobStarter:
         
         print(f"\n🆕 New job detected: {job_id}")
         print(f"📝 Prompt: {job_data.get('prompt', 'No prompt')}")
+        
+        # Final debug check before workflow start
+        print(f"DEBUG: Final job_data keys = {list(job_data.keys())}")
+        print(f"DEBUG: Final 'job_id' in job_data = {'job_id' in job_data}")
         
         try:
             # Start the workflow
