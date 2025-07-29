@@ -89,6 +89,7 @@ class TemporalJobStarter:
         """Process a new job document"""
         job_id = document.id
         data = document.to_dict()
+        data['job_id'] = job_id  # Add job_id to data - CRITICAL FIX
         print(f"\n🎨 Processing new job: {job_id}")
         
         # Convert Firestore timestamps to strings
