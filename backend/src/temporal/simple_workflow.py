@@ -143,7 +143,9 @@ class SimpleImageWorkflow:
         Run the simple image generation workflow
         """
         # Add validation and logging for debugging
-        workflow.logger.info(f"SimpleImageWorkflow started with job_data: {job_data}")
+        from src.utils.workflow_log_sanitizer import sanitize_for_workflow
+        sanitized_data = sanitize_for_workflow(job_data)
+        workflow.logger.info(f"SimpleImageWorkflow started with job_data: {sanitized_data}")
         workflow.logger.info(f"job_data type: {type(job_data)}")
         
         if not isinstance(job_data, dict):

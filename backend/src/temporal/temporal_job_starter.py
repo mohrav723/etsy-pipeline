@@ -90,7 +90,8 @@ class TemporalJobStarter:
         job_data = doc_snapshot.to_dict()
         job_data['job_id'] = job_id  # Add job_id to data
         
-        # Debug logging
+        # Debug logging with sanitization
+        from src.utils import sanitize_log_data
         print(f"DEBUG: job_id = {job_id}")
         print(f"DEBUG: job_data keys before processing = {list(job_data.keys())}")
         print(f"DEBUG: 'job_id' in job_data = {'job_id' in job_data}")
@@ -102,7 +103,8 @@ class TemporalJobStarter:
             job_data['updatedAt'] = job_data['updatedAt'].isoformat()
         
         print(f"\n🆕 New job detected: {job_id}")
-        print(f"📝 Prompt: {job_data.get('prompt', 'No prompt')}")
+        sanitized_prompt = sanitize_log_data(job_data.get('prompt', 'No prompt'))
+        print(f"📝 Prompt: {sanitized_prompt}")
         
         # Final debug check before workflow start
         print(f"DEBUG: Final job_data keys = {list(job_data.keys())}")
@@ -121,7 +123,7 @@ class TemporalJobStarter:
             print(f"🔗 View progress: http://localhost:8080/namespaces/default/workflows/{handle.id}")
             
         except Exception as e:
-            print(f"❌ Failed to start workflow for job {job_id}: {e}")
+            logger.error(f"❌ Failed to start workflow for job {job_id}: {e}")
             
             # Update job with error
             try:
@@ -147,9 +149,10 @@ class TemporalJobStarter:
             'original_job_id': intelligent_job_data.get('original_job_id')
         }
         
-        print(f"\n🧠 New intelligent mockup job detected: {intelligent_job_id}")
-        print(f"🎨 Artwork URL: {workflow_data['artwork_url']}")
-        print(f"🖼️  Mockup template: {workflow_data['mockup_template']}")
+        logger.info(f"\n🧠 New intelligent mockup job detected: {intelligent_job_id}")
+        # SafeLogger automatically sanitizes URLs
+        logger.info(f"🎨 Artwork URL: {workflow_data['artwork_url']}")
+        logger.info(f"🖼️  Mockup template: {workflow_data['mockup_template']}")
         
         try:
             # Start the intelligent mockup generation workflow
@@ -160,11 +163,11 @@ class TemporalJobStarter:
                 task_queue="image-generation-queue",
             )
             
-            print(f"✅ Intelligent mockup workflow started: {handle.id}")
-            print(f"🔗 View progress: http://localhost:8080/namespaces/default/workflows/{handle.id}")
+            logger.info(f"✅ Intelligent mockup workflow started: {handle.id}")
+            logger.info(f"🔗 View progress: http://localhost:8080/namespaces/default/workflows/{handle.id}")
             
         except Exception as e:
-            print(f"❌ Failed to start intelligent mockup workflow for {intelligent_job_id}: {e}")
+            logger.error(f"❌ Failed to start intelligent mockup workflow for {intelligent_job_id}: {e}")
             
             # Update intelligent mockup job with error
             try:
