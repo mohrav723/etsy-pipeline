@@ -33,6 +33,34 @@ const CostMonitoring = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'7' | '30' | '90'>('30');
   const [error, setError] = useState<string | null>(null);
 
+  const calculateSummary = React.useCallback((allCosts: CostRecord[], days: number) => {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const recentCosts = allCosts.filter(cost => 
+      cost.timestamp && new Date(cost.timestamp) > cutoffDate
+    );
+
+    let bflTotal = 0;
+    let storageTotal = 0;
+
+    recentCosts.forEach(cost => {
+      if (cost.costType === 'bfl_generation') {
+        bflTotal += cost.amount;
+      } else if (cost.costType === 'storage_upload') {
+        storageTotal += cost.amount;
+      }
+    });
+
+    setSummary({
+      total: bflTotal + storageTotal,
+      bfl_api: bflTotal,
+      google_storage: storageTotal,
+      count: recentCosts.length,
+      period: `${days} days`
+    });
+  }, []);
+
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
 
@@ -81,35 +109,7 @@ const CostMonitoring = () => {
         unsubscribe();
       }
     };
-  }, [selectedPeriod]);
-
-  const calculateSummary = (allCosts: CostRecord[], days: number) => {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-
-    const recentCosts = allCosts.filter(cost => 
-      cost.timestamp && new Date(cost.timestamp) > cutoffDate
-    );
-
-    let bflTotal = 0;
-    let storageTotal = 0;
-
-    recentCosts.forEach(cost => {
-      if (cost.costType === 'bfl_generation') {
-        bflTotal += cost.amount;
-      } else if (cost.costType === 'storage_upload') {
-        storageTotal += cost.amount;
-      }
-    });
-
-    setSummary({
-      total: bflTotal + storageTotal,
-      bfl_api: bflTotal,
-      google_storage: storageTotal,
-      count: recentCosts.length,
-      period: `${days} days`
-    });
-  };
+  }, [selectedPeriod, calculateSummary]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

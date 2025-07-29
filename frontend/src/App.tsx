@@ -48,7 +48,7 @@ function AppContent() {
     });
 
     return () => unsubscribe();
-  }, [isGenerating, setIsGenerating]);
+  }, [setIsGenerating]);
 
   // Apply the dark theme to the page
   useEffect(() => {

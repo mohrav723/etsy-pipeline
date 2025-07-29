@@ -72,7 +72,7 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
     if (isRegenerating) {
       setIsRegenerating(false);
     }
-  }, [job.generatedImageUrl]);
+  }, [job.generatedImageUrl, isRegenerating]);
   
   // Cleanup timeout on unmount
   React.useEffect(() => {
