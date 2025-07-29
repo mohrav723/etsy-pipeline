@@ -142,6 +142,20 @@ class SimpleImageWorkflow:
         """
         Run the simple image generation workflow
         """
+        # Add validation and logging for debugging
+        workflow.logger.info(f"SimpleImageWorkflow started with job_data: {job_data}")
+        workflow.logger.info(f"job_data type: {type(job_data)}")
+        
+        if not isinstance(job_data, dict):
+            error_msg = f"Expected job_data to be a dict, got {type(job_data).__name__}"
+            workflow.logger.error(error_msg)
+            raise ValueError(error_msg)
+            
+        if 'job_id' not in job_data:
+            error_msg = f"Missing 'job_id' in job_data. Keys present: {list(job_data.keys())}"
+            workflow.logger.error(error_msg)
+            raise KeyError(error_msg)
+            
         job_id = job_data['job_id']
         
         try:
