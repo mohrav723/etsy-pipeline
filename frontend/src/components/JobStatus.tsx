@@ -20,21 +20,17 @@ const JobStatus = ({ className }: JobStatusProps) => {
 
   useEffect(() => {
     const jobsCollection = collection(db, 'jobs');
-    const q = query(
-      jobsCollection,
-      orderBy('createdAt', 'desc'),
-      limit(3)
-    );
+    const q = query(jobsCollection, orderBy('createdAt', 'desc'), limit(3));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const jobs: JobUpdate[] = [];
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc) => {
         const data = doc.data();
         jobs.push({
           id: doc.id,
           status: data.status,
           prompt: data.prompt?.substring(0, 30) + (data.prompt?.length > 30 ? '...' : ''),
-          createdAt: data.createdAt
+          createdAt: data.createdAt,
         });
       });
       setRecentJobs(jobs);
@@ -46,28 +42,40 @@ const JobStatus = ({ className }: JobStatusProps) => {
 
   const getStatusColor = (status: JobStatusType) => {
     switch (status) {
-      case 'pending_art_generation': return '#ffa500';
-      case 'processing': return '#5865f2';
-      case 'pending_review': return '#57f287';
-      case 'approved': return '#00ff00';
-      case 'failed': return '#ed4245';
-      default: return '#99aab5';
+      case 'pending_art_generation':
+        return '#ffa500';
+      case 'processing':
+        return '#5865f2';
+      case 'pending_review':
+        return '#57f287';
+      case 'approved':
+        return '#00ff00';
+      case 'failed':
+        return '#ed4245';
+      default:
+        return '#99aab5';
     }
   };
 
   const getStatusEmoji = (status: JobStatusType) => {
     switch (status) {
-      case 'pending_art_generation': return '⏳';
-      case 'processing': return '🔄';
-      case 'pending_review': return '👀';
-      case 'approved': return '✅';
-      case 'failed': return '❌';
-      default: return '📝';
+      case 'pending_art_generation':
+        return '⏳';
+      case 'processing':
+        return '🔄';
+      case 'pending_review':
+        return '👀';
+      case 'approved':
+        return '✅';
+      case 'failed':
+        return '❌';
+      default:
+        return '📝';
     }
   };
 
   const formatStatus = (status: JobStatusType) => {
-    return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   const styles = {
@@ -122,27 +130,27 @@ const JobStatus = ({ className }: JobStatusProps) => {
       textAlign: 'center' as const,
       padding: '0.5rem 0',
       fontSize: '0.8rem',
-    }
+    },
   };
 
   return (
     <div style={styles.container} className={className}>
       <h4 style={styles.title}>📊 Recent Jobs</h4>
-      
+
       {isLoading ? (
         <div style={styles.loading}>Loading...</div>
       ) : recentJobs.length === 0 ? (
         <div style={styles.empty}>No jobs yet</div>
       ) : (
         recentJobs.map((job, index) => (
-          <div 
-            key={job.id} 
+          <div
+            key={job.id}
             style={{
               ...styles.jobItem,
-              ...(index === recentJobs.length - 1 ? styles.jobItemLast : {})
+              ...(index === recentJobs.length - 1 ? styles.jobItemLast : {}),
             }}
           >
-            <div 
+            <div
               style={{
                 ...styles.statusBadge,
                 backgroundColor: `${getStatusColor(job.status)}20`,
@@ -152,9 +160,7 @@ const JobStatus = ({ className }: JobStatusProps) => {
             >
               {getStatusEmoji(job.status)} {formatStatus(job.status)}
             </div>
-            <div style={styles.prompt}>
-              {job.prompt}
-            </div>
+            <div style={styles.prompt}>{job.prompt}</div>
           </div>
         ))
       )}

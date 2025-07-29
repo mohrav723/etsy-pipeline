@@ -16,14 +16,16 @@ const IntelligentMockupSkeleton: React.FC = () => {
       style={{ marginBottom: 16 }}
     >
       <Skeleton active paragraph={{ rows: 4 }} />
-      <div style={{ 
-        marginTop: 16, 
-        paddingTop: 16, 
-        borderTop: '1px solid #f0f0f0',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
+      <div
+        style={{
+          marginTop: 16,
+          paddingTop: 16,
+          borderTop: '1px solid #f0f0f0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <Skeleton.Input active size="small" style={{ width: 120 }} />
         <Skeleton.Input active size="small" style={{ width: 100 }} />
       </div>

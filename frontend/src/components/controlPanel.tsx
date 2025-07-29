@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { useGeneration } from '../context/GenerationContext';
-import { 
-  Card, 
-  Form, 
-  Input, 
-  Select, 
-  Slider, 
-  InputNumber, 
-  Checkbox, 
-  Button, 
-  Typography, 
+import {
+  Card,
+  Form,
+  Input,
+  Select,
+  Slider,
+  InputNumber,
+  Checkbox,
+  Button,
+  Typography,
   message,
   Space,
-  Divider
+  Divider,
 } from 'antd';
 import { ThunderboltOutlined, LoadingOutlined } from '@ant-design/icons';
 import { db } from '../firebase';
@@ -20,7 +20,13 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import JobStatus from './JobStatus';
 import { GenerationFormValues } from '../types';
 import { ErrorService } from '../services/errorService';
-import { GENERATION_DEFAULTS, MIN_PROMPT_LENGTH, SLIDER_RANGES, ASPECT_RATIOS, JOB_STATUS } from '../constants';
+import {
+  GENERATION_DEFAULTS,
+  MIN_PROMPT_LENGTH,
+  SLIDER_RANGES,
+  ASPECT_RATIOS,
+  JOB_STATUS,
+} from '../constants';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -30,12 +36,18 @@ const ControlPanel = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { setIsGenerating } = useGeneration();
 
-  const handleGenerateClick = async (values: GenerationFormValues & { aspectRatio?: string; safetyTolerance?: number; promptUpsampling?: boolean }) => {
+  const handleGenerateClick = async (
+    values: GenerationFormValues & {
+      aspectRatio?: string;
+      safetyTolerance?: number;
+      promptUpsampling?: boolean;
+    }
+  ) => {
     setIsLoading(true);
     setIsGenerating(true);
-    
+
     try {
-      const docRef = await addDoc(collection(db, "jobs"), {
+      const docRef = await addDoc(collection(db, 'jobs'), {
         status: JOB_STATUS.PENDING_ART,
         prompt: values.prompt.trim(),
         createdAt: serverTimestamp(),
@@ -46,13 +58,12 @@ const ControlPanel = () => {
         seed: values.seed === -1 ? Math.floor(Math.random() * 1000000) : values.seed,
         promptUpsampling: values.promptUpsampling || false,
       });
-      
+
       message.success(`Art generation job submitted! ID: ${docRef.id.slice(0, 8)}...`);
       form.resetFields(['prompt']);
-      
+
       // Keep showing loading state until image is generated
       // The loading state will be cleared when a new job appears in pending_review
-      
     } catch (e) {
       ErrorService.showError(e, 'Job submission');
       setIsGenerating(false);
@@ -61,12 +72,21 @@ const ControlPanel = () => {
     }
   };
 
-  const handleFormFinish = (values: GenerationFormValues & { aspectRatio?: string; safetyTolerance?: number; promptUpsampling?: boolean }) => {
+  const handleFormFinish = (
+    values: GenerationFormValues & {
+      aspectRatio?: string;
+      safetyTolerance?: number;
+      promptUpsampling?: boolean;
+    }
+  ) => {
     handleGenerateClick(values);
   };
 
   const handleFormFinishFailed = () => {
-    ErrorService.showError(new Error('Please fill in all required fields correctly'), 'Form validation');
+    ErrorService.showError(
+      new Error('Please fill in all required fields correctly'),
+      'Form validation'
+    );
   };
 
   return (
@@ -103,9 +123,12 @@ const ControlPanel = () => {
         <Form.Item
           label="Prompt"
           name="prompt"
-                    rules={[
+          rules={[
             { required: true, message: 'Please enter a prompt' },
-            { min: MIN_PROMPT_LENGTH, message: `Prompt must be at least ${MIN_PROMPT_LENGTH} characters long` }
+            {
+              min: MIN_PROMPT_LENGTH,
+              message: `Prompt must be at least ${MIN_PROMPT_LENGTH} characters long`,
+            },
           ]}
         >
           <TextArea
@@ -117,7 +140,7 @@ const ControlPanel = () => {
 
         <Form.Item label="Aspect Ratio" name="aspectRatio" style={{ marginBottom: '8px' }}>
           <Select>
-            {ASPECT_RATIOS.map(ratio => (
+            {ASPECT_RATIOS.map((ratio) => (
               <Select.Option key={ratio.value} value={ratio.value}>
                 {ratio.label}
               </Select.Option>
@@ -130,11 +153,7 @@ const ControlPanel = () => {
             <Text type="secondary" style={{ fontSize: '11px' }}>
               More steps = better quality, but slower generation
             </Text>
-            <Slider
-              min={1}
-              max={50}
-              tooltip={{ formatter: (value) => `${value} steps` }}
-            />
+            <Slider min={1} max={50} tooltip={{ formatter: (value) => `${value} steps` }} />
           </Space>
         </Form.Item>
 
@@ -143,12 +162,7 @@ const ControlPanel = () => {
             <Text type="secondary" style={{ fontSize: '11px' }}>
               High guidance scales improve prompt adherence at the cost of reduced realism
             </Text>
-            <Slider
-              min={1.5}
-              max={5}
-              step={0.1}
-              tooltip={{ formatter: (value) => `${value}` }}
-            />
+            <Slider min={1.5} max={5} step={0.1} tooltip={{ formatter: (value) => `${value}` }} />
           </Space>
         </Form.Item>
 
@@ -166,10 +180,7 @@ const ControlPanel = () => {
             <Text type="secondary" style={{ fontSize: '11px' }}>
               Use -1 for random, or specific number for reproducible results
             </Text>
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="Enter seed or -1 for random"
-            />
+            <InputNumber style={{ width: '100%' }} placeholder="Enter seed or -1 for random" />
           </Space>
         </Form.Item>
 
@@ -192,7 +203,7 @@ const ControlPanel = () => {
       </Form>
 
       <Divider style={{ margin: '12px 0 8px 0' }} />
-      
+
       <JobStatus />
     </Card>
   );

@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import {
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+  addDoc,
+  updateDoc,
+  doc,
+  serverTimestamp,
+} from 'firebase/firestore';
 import { Typography, Empty, Spin, message } from 'antd';
 import { RobotOutlined } from '@ant-design/icons';
 import { IntelligentMockupJob } from '../types';
 import IntelligentMockupCard from './IntelligentMockupCard';
-import IntelligentMockupSkeleton from './IntelligentMockupSkeleton';
 import IntelligentMockupHelp from './IntelligentMockupHelp';
 import { ErrorService } from '../services/errorService';
 import './DraftsTab.css';
@@ -21,26 +29,30 @@ const DraftsTab = () => {
     const intelligentJobsCollection = collection(db, 'intelligent_mockup_jobs');
     const q = query(intelligentJobsCollection, orderBy('createdAt', 'desc'));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const jobsFromFirestore: IntelligentMockupJob[] = [];
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        jobsFromFirestore.push({ 
-          id: doc.id, 
-          ...data,
-          // Ensure timestamps are properly typed
-          createdAt: data.createdAt,
-          processingStartTime: data.processingStartTime || null,
-          completionTime: data.completionTime || null,
-          retriedAt: data.retriedAt || undefined
-        } as IntelligentMockupJob);
-      });
-      setIntelligentJobs(jobsFromFirestore);
-      setLoadingIntelligent(false);
-    }, (error) => {
-      console.error('Error listening to intelligent mockup jobs:', error);
-      setLoadingIntelligent(false);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const jobsFromFirestore: IntelligentMockupJob[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          jobsFromFirestore.push({
+            id: doc.id,
+            ...data,
+            // Ensure timestamps are properly typed
+            createdAt: data.createdAt,
+            processingStartTime: data.processingStartTime || null,
+            completionTime: data.completionTime || null,
+            retriedAt: data.retriedAt || undefined,
+          } as IntelligentMockupJob);
+        });
+        setIntelligentJobs(jobsFromFirestore);
+        setLoadingIntelligent(false);
+      },
+      (error) => {
+        console.error('Error listening to intelligent mockup jobs:', error);
+        setLoadingIntelligent(false);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
@@ -49,97 +61,96 @@ const DraftsTab = () => {
     container: {
       display: 'flex',
       flexDirection: 'column' as const,
-      gap: '1.5rem'
+      gap: '1.5rem',
     },
     header: {
       color: '#ffffff',
       fontSize: '1.2rem',
       fontWeight: 'bold',
-      marginBottom: '1rem'
+      marginBottom: '1rem',
     },
     imageContainer: {
       display: 'flex',
       gap: '8px',
-      padding: '16px'
+      padding: '16px',
     },
     imageWrapper: {
       flex: 1,
-      textAlign: 'center' as const
+      textAlign: 'center' as const,
     },
     imageLabel: {
       color: '#99aab5',
       fontSize: '0.8rem',
       marginBottom: '8px',
-      fontWeight: 'bold'
+      fontWeight: 'bold',
     },
     image: {
       width: '100%',
       height: '150px',
       objectFit: 'cover' as const,
       borderRadius: '4px',
-      border: '1px solid #40444b'
+      border: '1px solid #40444b',
     },
     cardInfo: {
       padding: '16px',
-      borderTop: '1px solid #40444b'
+      borderTop: '1px solid #40444b',
     },
     mockupName: {
       color: '#ffffff',
       fontSize: '1rem',
       fontWeight: 'bold',
-      marginBottom: '8px'
+      marginBottom: '8px',
     },
     status: {
       fontSize: '0.8rem',
       padding: '4px 8px',
       borderRadius: '4px',
       display: 'inline-block',
-      marginBottom: '8px'
+      marginBottom: '8px',
     },
     statusProcessing: {
       backgroundColor: '#ffa50020',
       color: '#ffa500',
-      border: '1px solid #ffa50040'
+      border: '1px solid #ffa50040',
     },
     statusCompleted: {
       backgroundColor: '#57f28720',
       color: '#57f287',
-      border: '1px solid #57f28740'
+      border: '1px solid #57f28740',
     },
     statusFailed: {
       backgroundColor: '#ed424520',
       color: '#ed4245',
-      border: '1px solid #ed424540'
+      border: '1px solid #ed424540',
     },
     date: {
       color: '#99aab5',
-      fontSize: '0.8rem'
+      fontSize: '0.8rem',
     },
     loadingContainer: {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      height: '200px'
+      height: '200px',
     },
     emptyState: {
       textAlign: 'center' as const,
       padding: '40px',
-      color: '#99aab5'
-    }
+      color: '#99aab5',
+    },
   };
-
 
   // Handle retry for intelligent mockups
   const handleRetryIntelligentMockup = async (jobId: string) => {
     try {
-      const job = intelligentJobs.find(j => j.id === jobId);
+      const job = intelligentJobs.find((j) => j.id === jobId);
       if (!job) return;
 
       // Mark old job as retried
-      const { id, ...jobData } = job;
+      const { id: _id, ...jobData } = job;
       await updateDoc(doc(db, 'intelligent_mockup_jobs', jobId), {
         status: 'retried',
-        retriedAt: serverTimestamp()
+        retriedAt: serverTimestamp(),
       });
 
       // Create new job
@@ -151,7 +162,7 @@ const DraftsTab = () => {
         completionTime: null,
         error: null,
         resultUrl: null,
-        detectedRegions: null
+        detectedRegions: null,
       });
 
       message.success('Retrying intelligent mockup generation...');
@@ -193,10 +204,7 @@ const DraftsTab = () => {
         <div className="intelligent-mockup-container">
           {intelligentJobs.map((job) => (
             <div key={job.id} className="intelligent-mockup-wrapper">
-              <IntelligentMockupCard 
-                job={job} 
-                onRetry={handleRetryIntelligentMockup}
-              />
+              <IntelligentMockupCard job={job} onRetry={handleRetryIntelligentMockup} />
             </div>
           ))}
         </div>

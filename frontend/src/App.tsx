@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, Typography, Tabs, Empty, Card, Spin } from 'antd';
 import { GenerationProvider, useGeneration } from './context/GenerationContext';
-import { PictureOutlined, HistoryOutlined, MobileOutlined, DollarCircleOutlined, FileImageOutlined } from '@ant-design/icons';
+import {
+  PictureOutlined,
+  HistoryOutlined,
+  MobileOutlined,
+  DollarCircleOutlined,
+  FileImageOutlined,
+} from '@ant-design/icons';
 import ArtReviewCard, { Job } from './components/artReviewCard';
 import ControlPanel from './components/controlPanel';
 import HistoryTab from './components/historyTab';
@@ -20,13 +26,15 @@ const { Title, Text } = Typography;
 function AppContent() {
   const { isGenerating, setIsGenerating } = useGeneration();
   const [reviewJobs, setReviewJobs] = useState<Job[]>([]);
-  const [activeTab, setActiveTab] = useState<'review' | 'history' | 'mockups' | 'drafts' | 'costs'>('review');
+  const [activeTab, setActiveTab] = useState<'review' | 'history' | 'mockups' | 'drafts' | 'costs'>(
+    'review'
+  );
 
   // Listen for only the most recent pending_review job
   useEffect(() => {
     const jobsCollection = collection(db, 'jobs');
     const q = query(
-      jobsCollection, 
+      jobsCollection,
       where('status', '==', 'pending_review'),
       orderBy('createdAt', 'desc'),
       limit(1)
@@ -34,13 +42,13 @@ function AppContent() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const jobsFromFirestore: Job[] = [];
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc) => {
         const data = doc.data();
         jobsFromFirestore.push({ id: doc.id, ...data } as Job);
       });
-      
+
       setReviewJobs(jobsFromFirestore);
-      
+
       // Clear loading state when a new job appears for review
       if (jobsFromFirestore.length > 0) {
         setIsGenerating(false);
@@ -68,15 +76,25 @@ function AppContent() {
       children: (
         <>
           {isGenerating && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px', marginBottom: '16px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '400px',
+                marginBottom: '16px',
+              }}
+            >
               <Card style={{ width: '100%', textAlign: 'center' }}>
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  gap: '16px',
-                  padding: '40px'
-                }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '16px',
+                    padding: '40px',
+                  }}
+                >
                   <Spin size="large" />
                   <Text style={{ color: '#b9bbbe', fontSize: '16px' }}>
                     Generating your image...
@@ -88,10 +106,12 @@ function AppContent() {
               </Card>
             </div>
           )}
-          
+
           {reviewJobs.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '4px 0' }}>
-              {reviewJobs.map(job => (
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '4px 0' }}
+            >
+              {reviewJobs.map((job) => (
                 <ErrorBoundary key={job.id}>
                   <ArtReviewCard job={job} />
                 </ErrorBoundary>
@@ -153,57 +173,63 @@ function AppContent() {
     <ConfigProvider theme={antdDarkTheme}>
       <ErrorBoundary>
         <Layout style={{ height: '100vh', overflow: 'hidden' }}>
-          <Header style={{ 
-            padding: '0 32px', 
-            borderBottom: '1px solid #40444b',
-            height: '60px',
-            lineHeight: 'normal',
-            display: 'flex',
-            alignItems: 'center',
-            flexShrink: 0
-          }}>
-            <Title 
-              level={1} 
-              style={{ 
-                color: '#ffffff', 
-                margin: 0, 
+          <Header
+            style={{
+              padding: '0 32px',
+              borderBottom: '1px solid #40444b',
+              height: '60px',
+              lineHeight: 'normal',
+              display: 'flex',
+              alignItems: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Title
+              level={1}
+              style={{
+                color: '#ffffff',
+                margin: 0,
                 lineHeight: '1.2',
-                fontSize: '24px'
+                fontSize: '24px',
               }}
             >
               Etsy Pipeline Dashboard
             </Title>
           </Header>
-          
+
           <Layout>
-            <Sider 
-              width={360} 
-              style={{ 
+            <Sider
+              width={360}
+              style={{
                 background: '#23272a',
                 padding: '16px',
                 borderRight: '1px solid #40444b',
                 overflow: 'auto',
                 height: 'calc(100vh - 60px)',
-                flexShrink: 0
+                flexShrink: 0,
               }}
             >
               <ErrorBoundary>
                 <ControlPanel />
               </ErrorBoundary>
             </Sider>
-            
-            <Content style={{ 
-              padding: '20px', 
-              background: '#1a1a1a',
-              overflow: 'auto',
-              height: 'calc(100vh - 60px)',
-              display: 'flex',
-              flexDirection: 'column' 
-            }}>
+
+            <Content
+              style={{
+                padding: '20px',
+                background: '#1a1a1a',
+                overflow: 'auto',
+                height: 'calc(100vh - 60px)',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               <ErrorBoundary>
                 <Tabs
                   activeKey={activeTab}
-                  onChange={(key) => setActiveTab(key as 'review' | 'history' | 'mockups' | 'drafts' | 'costs')}
+                  onChange={(key) =>
+                    setActiveTab(key as 'review' | 'history' | 'mockups' | 'drafts' | 'costs')
+                  }
                   items={tabItems}
                   size="large"
                   style={{ height: '100%', display: 'flex', flexDirection: 'column' }}

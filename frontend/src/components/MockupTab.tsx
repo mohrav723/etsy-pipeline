@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, Timestamp } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  deleteDoc,
+  doc,
+  Timestamp,
+} from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Mockup } from '../types';
 import { FILE_SIZE_LIMIT_BYTES, ALLOWED_FILE_TYPES, IMAGE_PREVIEW_HEIGHT } from '../constants';
@@ -20,7 +29,7 @@ const MockupTab = () => {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const mockupsFromFirestore: Mockup[] = [];
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc) => {
         mockupsFromFirestore.push({ id: doc.id, ...doc.data() } as Mockup);
       });
       setMockups(mockupsFromFirestore);
@@ -39,19 +48,21 @@ const MockupTab = () => {
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
+
         // Validate file type and size
         if (!ALLOWED_FILE_TYPES.includes(file.type)) {
           throw new Error(`File ${file.name} must be JPEG, PNG, or WebP format`);
         }
-        
+
         if (file.size > FILE_SIZE_LIMIT_BYTES) {
-          throw new Error(`File ${file.name} is too large. Maximum size is ${FILE_SIZE_LIMIT_BYTES / (1024 * 1024)}MB`);
+          throw new Error(
+            `File ${file.name} is too large. Maximum size is ${FILE_SIZE_LIMIT_BYTES / (1024 * 1024)}MB`
+          );
         }
 
         // Create a reference to the file in Firebase Storage
         const storageRef = ref(storage, `mockups/${Date.now()}_${file.name}`);
-        
+
         // Upload the file
         const snapshot = await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(snapshot.ref);
@@ -112,7 +123,7 @@ const MockupTab = () => {
     container: {
       display: 'flex',
       flexDirection: 'column' as const,
-      gap: '1.5rem'
+      gap: '1.5rem',
     },
     uploadArea: {
       border: `2px dashed ${dragActive ? '#5865f2' : '#40444b'}`,
@@ -121,12 +132,12 @@ const MockupTab = () => {
       textAlign: 'center' as const,
       backgroundColor: dragActive ? '#5865f220' : '#23272a',
       cursor: 'pointer',
-      transition: 'all 0.2s ease'
+      transition: 'all 0.2s ease',
     },
     uploadText: {
       color: '#99aab5',
       fontSize: '1.1rem',
-      marginBottom: '1rem'
+      marginBottom: '1rem',
     },
     uploadButton: {
       backgroundColor: '#5865f2',
@@ -136,10 +147,10 @@ const MockupTab = () => {
       borderRadius: '6px',
       cursor: 'pointer',
       fontSize: '1rem',
-      fontWeight: 'bold'
+      fontWeight: 'bold',
     },
     hiddenInput: {
-      display: 'none'
+      display: 'none',
     },
     message: {
       padding: '12px',
@@ -160,33 +171,33 @@ const MockupTab = () => {
     mockupsGrid: {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-      gap: '1rem'
+      gap: '1rem',
     },
     mockupCard: {
       backgroundColor: '#23272a',
       border: '1px solid #40444b',
       borderRadius: '8px',
       overflow: 'hidden',
-      transition: 'transform 0.2s ease'
+      transition: 'transform 0.2s ease',
     },
     mockupImage: {
       width: '100%',
       height: IMAGE_PREVIEW_HEIGHT,
-      objectFit: 'cover' as const
+      objectFit: 'cover' as const,
     },
     mockupInfo: {
-      padding: '1rem'
+      padding: '1rem',
     },
     mockupName: {
       color: '#ffffff',
       fontSize: '1rem',
       fontWeight: 'bold',
-      marginBottom: '0.5rem'
+      marginBottom: '0.5rem',
     },
     mockupDate: {
       color: '#99aab5',
       fontSize: '0.8rem',
-      marginBottom: '1rem'
+      marginBottom: '1rem',
     },
     deleteButton: {
       backgroundColor: '#ed4245',
@@ -195,7 +206,7 @@ const MockupTab = () => {
       padding: '0.5rem 1rem',
       borderRadius: '4px',
       cursor: 'pointer',
-      fontSize: '0.8rem'
+      fontSize: '0.8rem',
     },
     loadingOverlay: {
       position: 'fixed' as const,
@@ -207,21 +218,21 @@ const MockupTab = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000
+      zIndex: 1000,
     },
     loadingContent: {
       backgroundColor: '#23272a',
       padding: '2rem',
       borderRadius: '8px',
       color: '#ffffff',
-      textAlign: 'center' as const
+      textAlign: 'center' as const,
     },
     sectionTitle: {
       color: '#ffffff',
       fontSize: '1.2rem',
       fontWeight: 'bold',
-      marginBottom: '1rem'
-    }
+      marginBottom: '1rem',
+    },
   };
 
   return (
@@ -235,10 +246,9 @@ const MockupTab = () => {
         onClick={() => fileInputRef.current?.click()}
       >
         <div style={styles.uploadText}>
-          {dragActive ? 
-            'Drop your mockup images here!' : 
-            'Drag & drop mockup images here, or click to browse'
-          }
+          {dragActive
+            ? 'Drop your mockup images here!'
+            : 'Drag & drop mockup images here, or click to browse'}
         </div>
         <button style={styles.uploadButton} type="button">
           Choose Files
@@ -254,49 +264,40 @@ const MockupTab = () => {
       </div>
 
       {/* Messages */}
-      {error && (
-        <div style={{...styles.message, ...styles.errorMessage}}>
-          ❌ {error}
-        </div>
-      )}
+      {error && <div style={{ ...styles.message, ...styles.errorMessage }}>❌ {error}</div>}
 
       {successMessage && (
-        <div style={{...styles.message, ...styles.successMessage}}>
-          ✅ {successMessage}
-        </div>
+        <div style={{ ...styles.message, ...styles.successMessage }}>✅ {successMessage}</div>
       )}
 
       {/* Mockups Grid */}
       <div>
-        <h3 style={styles.sectionTitle}>
-          Your Mockups ({mockups.length})
-        </h3>
-        
+        <h3 style={styles.sectionTitle}>Your Mockups ({mockups.length})</h3>
+
         {mockups.length === 0 ? (
-          <div style={{...styles.message, backgroundColor: '#40444b20', color: '#99aab5', border: '1px solid #40444b'}}>
+          <div
+            style={{
+              ...styles.message,
+              backgroundColor: '#40444b20',
+              color: '#99aab5',
+              border: '1px solid #40444b',
+            }}
+          >
             No mockups uploaded yet. Upload some mockup images to get started!
           </div>
         ) : (
           <div style={styles.mockupsGrid}>
             {mockups.map((mockup) => (
               <div key={mockup.id} style={styles.mockupCard}>
-                <img
-                  src={mockup.imageUrl}
-                  alt={mockup.name}
-                  style={styles.mockupImage}
-                />
+                <img src={mockup.imageUrl} alt={mockup.name} style={styles.mockupImage} />
                 <div style={styles.mockupInfo}>
                   <div style={styles.mockupName}>{mockup.name}</div>
                   <div style={styles.mockupDate}>
-                    {mockup.uploadedAt?.toDate ? 
-                      mockup.uploadedAt.toDate().toLocaleDateString() : 
-                      'Unknown date'
-                    }
+                    {mockup.uploadedAt?.toDate
+                      ? mockup.uploadedAt.toDate().toLocaleDateString()
+                      : 'Unknown date'}
                   </div>
-                  <button
-                    style={styles.deleteButton}
-                    onClick={() => handleDeleteMockup(mockup)}
-                  >
+                  <button style={styles.deleteButton} onClick={() => handleDeleteMockup(mockup)}>
                     Delete
                   </button>
                 </div>
@@ -311,7 +312,7 @@ const MockupTab = () => {
         <div style={styles.loadingOverlay}>
           <div style={styles.loadingContent}>
             <div>Uploading mockups...</div>
-            <div style={{marginTop: '1rem', fontSize: '0.9rem', color: '#99aab5'}}>
+            <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#99aab5' }}>
               Please wait while we process your images
             </div>
           </div>

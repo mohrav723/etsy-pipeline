@@ -1,29 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Card, Modal, Row, Col, Divider, Space, Pagination, Spin } from 'antd';
 import { db } from '../firebase';
-import { collection, getDocs, query, where, orderBy, limit, startAfter, DocumentSnapshot, Timestamp } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
+  startAfter,
+  DocumentSnapshot,
+  Timestamp,
+} from 'firebase/firestore';
 import { Job } from '../types';
 import MockupButton from './MockupButton';
 import { JOBS_PER_PAGE, IMAGE_PREVIEW_HEIGHT, MODAL_IMAGE_MAX_HEIGHT } from '../constants';
 
 const { Title, Text } = Typography;
 
-type HistoryTabProps = {};
-
 interface GroupedJobs {
   [date: string]: Job[];
 }
 
-const HistoryTab = ({}: HistoryTabProps) => {
+const HistoryTab = () => {
   const [historyJobs, setHistoryJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [totalJobs, setTotalJobs] = useState(0);
-  const [lastVisible, setLastVisible] = useState<DocumentSnapshot | null>(null);
-  const [pageSnapshots, setPageSnapshots] = useState<{ [key: number]: DocumentSnapshot | null }>({});
-  
+  const [_lastVisible, setLastVisible] = useState<DocumentSnapshot | null>(null);
+  const [pageSnapshots, setPageSnapshots] = useState<{ [key: number]: DocumentSnapshot | null }>(
+    {}
+  );
 
   // Fetch total count for pagination
   const fetchTotalCount = async () => {
@@ -35,14 +44,14 @@ const HistoryTab = ({}: HistoryTabProps) => {
       );
       const snapshot = await getDocs(countQuery);
       let count = 0;
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc) => {
         const data = doc.data();
         if (data.generatedImageUrl) {
           count++;
         }
       });
       setTotalJobs(count);
-    } catch (error) {
+    } catch (_error) {
       // Error fetching total count
     }
   };
@@ -73,24 +82,23 @@ const HistoryTab = ({}: HistoryTabProps) => {
       const snapshot = await getDocs(q);
       const jobsFromFirestore: Job[] = [];
       let lastDoc: DocumentSnapshot | null = null;
-      
-      snapshot.forEach(doc => {
+
+      snapshot.forEach((doc) => {
         const data = doc.data();
         if (data.generatedImageUrl) {
           jobsFromFirestore.push({ id: doc.id, ...data } as Job);
           lastDoc = doc;
         }
       });
-      
+
       setHistoryJobs(jobsFromFirestore);
       setLastVisible(lastDoc);
-      
+
       // Store the last document for this page to enable navigation
       if (lastDoc) {
-        setPageSnapshots(prev => ({ ...prev, [page]: lastDoc }));
+        setPageSnapshots((prev) => ({ ...prev, [page]: lastDoc }));
       }
-      
-    } catch (error) {
+    } catch (_error) {
       // Error fetching jobs
     } finally {
       setLoading(false);
@@ -101,6 +109,7 @@ const HistoryTab = ({}: HistoryTabProps) => {
   useEffect(() => {
     fetchTotalCount();
     fetchJobsForPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle page change
@@ -112,7 +121,7 @@ const HistoryTab = ({}: HistoryTabProps) => {
   // Helper function to format date from Firebase timestamp
   const formatDate = (timestamp: Timestamp | Date | null): string => {
     if (!timestamp) return 'Unknown Date';
-    
+
     let date: Date;
     if (timestamp.toDate) {
       // Firebase Timestamp
@@ -131,18 +140,22 @@ const HistoryTab = ({}: HistoryTabProps) => {
 
     const jobDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const yesterdayDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    const yesterdayDate = new Date(
+      yesterday.getFullYear(),
+      yesterday.getMonth(),
+      yesterday.getDate()
+    );
 
     if (jobDate.getTime() === todayDate.getTime()) {
       return 'Today';
     } else if (jobDate.getTime() === yesterdayDate.getTime()) {
       return 'Yesterday';
     } else {
-      return date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+      return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
       });
     }
   };
@@ -183,99 +196,104 @@ const HistoryTab = ({}: HistoryTabProps) => {
             showSizeChanger={false}
             showQuickJumper
             showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} images`}
-            style={{
-              '& .ant-pagination-item': {
-                backgroundColor: '#23272a',
-                borderColor: '#40444b'
-              },
-              '& .ant-pagination-item a': {
-                color: '#b9bbbe'
-              },
-              '& .ant-pagination-item-active': {
-                backgroundColor: '#5865f2',
-                borderColor: '#5865f2'
-              },
-              '& .ant-pagination-item-active a': {
-                color: '#ffffff'
-              }
-            } as React.CSSProperties}
+            style={
+              {
+                '& .ant-pagination-item': {
+                  backgroundColor: '#23272a',
+                  borderColor: '#40444b',
+                },
+                '& .ant-pagination-item a': {
+                  color: '#b9bbbe',
+                },
+                '& .ant-pagination-item-active': {
+                  backgroundColor: '#5865f2',
+                  borderColor: '#5865f2',
+                },
+                '& .ant-pagination-item-active a': {
+                  color: '#ffffff',
+                },
+              } as React.CSSProperties
+            }
           />
         </div>
       )}
-      
+
       <Spin spinning={loading}>
         <div style={{ padding: '8px 0', minHeight: '400px' }}>
-        {Object.keys(groupedJobs).length === 0 ? (
-          <Card style={{ textAlign: 'center', padding: '40px' }}>
-            <Text type="secondary">No images in history yet. Generate some art to see them here!</Text>
-          </Card>
-        ) : (
-          Object.entries(groupedJobs).map(([date, jobs]) => (
-            <div key={date} style={{ marginBottom: '32px' }}>
-              <Title level={4} style={{ color: '#ffffff', marginBottom: '16px' }}>
-                {date}
-              </Title>
-              <Row gutter={[16, 16]}>
-                {jobs.map(job => (
-                  <Col key={job.id} xs={12} sm={8} md={6} lg={4}>
-                    <Card
-                      hoverable
-                      cover={
-                        <div style={{ height: IMAGE_PREVIEW_HEIGHT, overflow: 'hidden' }}>
-                          <img
-                            src={job.generatedImageUrl}
-                            alt="Generated art"
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                              transition: 'transform 0.3s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'scale(1.05)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'scale(1)';
-                            }}
-                          />
-                        </div>
-                      }
-                      onClick={() => handleImageClick(job)}
-                      style={{ 
-                        height: 'fit-content',
-                        backgroundColor: '#23272a',
-                        border: '1px solid #40444b'
-                      }}
-                      styles={{
-                        body: { padding: '12px' }
-                      }}
-                    >
-                      <Card.Meta
-                        description={
-                          <Text 
-                            style={{ 
-                              color: '#b9bbbe', 
-                              fontSize: '12px',
-                              display: 'block',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            "{job.prompt}"
-                          </Text>
+          {Object.keys(groupedJobs).length === 0 ? (
+            <Card style={{ textAlign: 'center', padding: '40px' }}>
+              <Text type="secondary">
+                No images in history yet. Generate some art to see them here!
+              </Text>
+            </Card>
+          ) : (
+            Object.entries(groupedJobs).map(([date, jobs]) => (
+              <div key={date} style={{ marginBottom: '32px' }}>
+                <Title level={4} style={{ color: '#ffffff', marginBottom: '16px' }}>
+                  {date}
+                </Title>
+                <Row gutter={[16, 16]}>
+                  {jobs.map((job) => (
+                    <Col key={job.id} xs={12} sm={8} md={6} lg={4}>
+                      <Card
+                        hoverable
+                        cover={
+                          <div style={{ height: IMAGE_PREVIEW_HEIGHT, overflow: 'hidden' }}>
+                            <img
+                              src={job.generatedImageUrl}
+                              alt="Generated art"
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                transition: 'transform 0.3s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                              }}
+                            />
+                          </div>
                         }
-                      />
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-              {Object.entries(groupedJobs).indexOf([date, jobs]) < Object.entries(groupedJobs).length - 1 && (
-                <Divider style={{ borderColor: '#40444b', margin: '24px 0' }} />
-              )}
-            </div>
-          ))
-        )}
+                        onClick={() => handleImageClick(job)}
+                        style={{
+                          height: 'fit-content',
+                          backgroundColor: '#23272a',
+                          border: '1px solid #40444b',
+                        }}
+                        styles={{
+                          body: { padding: '12px' },
+                        }}
+                      >
+                        <Card.Meta
+                          description={
+                            <Text
+                              style={{
+                                color: '#b9bbbe',
+                                fontSize: '12px',
+                                display: 'block',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              "{job.prompt}"
+                            </Text>
+                          }
+                        />
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+                {Object.entries(groupedJobs).indexOf([date, jobs]) <
+                  Object.entries(groupedJobs).length - 1 && (
+                  <Divider style={{ borderColor: '#40444b', margin: '24px 0' }} />
+                )}
+              </div>
+            ))
+          )}
         </div>
       </Spin>
 
@@ -289,8 +307,8 @@ const HistoryTab = ({}: HistoryTabProps) => {
         styles={{
           content: {
             backgroundColor: '#23272a',
-            border: '1px solid #40444b'
-          }
+            border: '1px solid #40444b',
+          },
         }}
       >
         {selectedJob && (
@@ -303,54 +321,56 @@ const HistoryTab = ({}: HistoryTabProps) => {
                   maxWidth: '100%',
                   height: 'auto',
                   borderRadius: '8px',
-                  maxHeight: MODAL_IMAGE_MAX_HEIGHT
+                  maxHeight: MODAL_IMAGE_MAX_HEIGHT,
                 }}
               />
             </div>
-            
+
             <div style={{ marginBottom: '16px' }}>
               <Text strong style={{ color: '#ffffff', fontSize: '16px' }}>
                 "{selectedJob.prompt}"
               </Text>
             </div>
-            
+
             <Space direction="vertical" size="small" style={{ width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Text style={{ color: '#99aab5' }}>Aspect Ratio:</Text>
                 <Text style={{ color: '#ffffff' }}>{selectedJob.aspectRatio}</Text>
               </div>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Text style={{ color: '#99aab5' }}>Steps:</Text>
                 <Text style={{ color: '#ffffff' }}>{selectedJob.steps}</Text>
               </div>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Text style={{ color: '#99aab5' }}>Guidance:</Text>
                 <Text style={{ color: '#ffffff' }}>{selectedJob.guidance}</Text>
               </div>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Text style={{ color: '#99aab5' }}>Safety Tolerance:</Text>
                 <Text style={{ color: '#ffffff' }}>{selectedJob.safetyTolerance}</Text>
               </div>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Text style={{ color: '#99aab5' }}>Seed:</Text>
                 <Text style={{ color: '#ffffff' }}>{selectedJob.seed}</Text>
               </div>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Text style={{ color: '#99aab5' }}>Prompt Upsampling:</Text>
-                <Text style={{ color: '#ffffff' }}>{selectedJob.promptUpsampling ? 'Yes' : 'No'}</Text>
+                <Text style={{ color: '#ffffff' }}>
+                  {selectedJob.promptUpsampling ? 'Yes' : 'No'}
+                </Text>
               </div>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Text style={{ color: '#99aab5' }}>Created:</Text>
                 <Text style={{ color: '#ffffff' }}>{formatDate(selectedJob.createdAt)}</Text>
               </div>
             </Space>
-            
+
             <div style={{ marginTop: '24px', textAlign: 'center' }}>
               <MockupButton
                 jobId={selectedJob.id}

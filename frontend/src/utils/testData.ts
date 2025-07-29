@@ -1,5 +1,9 @@
 import { Timestamp } from 'firebase/firestore';
-import { IntelligentMockupJob, IntelligentMockupJobStatus, IntelligentMockupErrorType } from '../types';
+import {
+  IntelligentMockupJob,
+  IntelligentMockupJobStatus,
+  IntelligentMockupErrorType,
+} from '../types';
 
 // Helper to create timestamp
 const createTimestamp = (date: Date = new Date()): Timestamp => {
@@ -7,63 +11,72 @@ const createTimestamp = (date: Date = new Date()): Timestamp => {
 };
 
 // Test data for different intelligent mockup job states
-export const mockIntelligentMockupJobs: Record<IntelligentMockupJobStatus | 'various', IntelligentMockupJob[]> = {
-  pending: [{
-    id: 'intel-mock-1',
-    status: 'pending',
-    sourceJobId: 'job-123',
-    sourceImageUrl: 'https://example.com/artwork1.png',
-    sourcePrompt: 'A beautiful sunset over mountains',
-    createdAt: createTimestamp(),
-    processingStartTime: null,
-    completionTime: null,
-    error: null,
-    resultUrl: null,
-    detectedRegions: null,
-    templateUsed: 'template-001'
-  }],
-  
-  processing: [{
-    id: 'intel-mock-2',
-    status: 'processing',
-    sourceJobId: 'job-456',
-    sourceImageUrl: 'https://example.com/artwork2.png',
-    sourcePrompt: 'Abstract geometric pattern',
-    createdAt: createTimestamp(new Date(Date.now() - 60000)), // 1 minute ago
-    processingStartTime: createTimestamp(new Date(Date.now() - 30000)), // 30 seconds ago
-    completionTime: null,
-    error: null,
-    resultUrl: null,
-    detectedRegions: null,
-    templateUsed: 'template-002'
-  }],
-  
-  completed: [{
-    id: 'intel-mock-3',
-    status: 'completed',
-    sourceJobId: 'job-789',
-    sourceImageUrl: 'https://example.com/artwork3.png',
-    sourcePrompt: 'Vintage botanical illustration',
-    createdAt: createTimestamp(new Date(Date.now() - 300000)), // 5 minutes ago
-    processingStartTime: createTimestamp(new Date(Date.now() - 280000)),
-    completionTime: createTimestamp(new Date(Date.now() - 180000)), // 3 minutes ago
-    error: null,
-    resultUrl: 'https://example.com/intelligent-mockup-result.png',
-    detectedRegions: [
-      {
-        label: 'picture_frame',
-        confidence: 0.95,
-        bbox: [100, 150, 400, 450]
-      },
-      {
-        label: 'wall',
-        confidence: 0.87,
-        bbox: [0, 0, 800, 600]
-      }
-    ],
-    templateUsed: 'template-003'
-  }],
-  
+export const mockIntelligentMockupJobs: Record<
+  IntelligentMockupJobStatus | 'various',
+  IntelligentMockupJob[]
+> = {
+  pending: [
+    {
+      id: 'intel-mock-1',
+      status: 'pending',
+      sourceJobId: 'job-123',
+      sourceImageUrl: 'https://example.com/artwork1.png',
+      sourcePrompt: 'A beautiful sunset over mountains',
+      createdAt: createTimestamp(),
+      processingStartTime: null,
+      completionTime: null,
+      error: null,
+      resultUrl: null,
+      detectedRegions: null,
+      templateUsed: 'template-001',
+    },
+  ],
+
+  processing: [
+    {
+      id: 'intel-mock-2',
+      status: 'processing',
+      sourceJobId: 'job-456',
+      sourceImageUrl: 'https://example.com/artwork2.png',
+      sourcePrompt: 'Abstract geometric pattern',
+      createdAt: createTimestamp(new Date(Date.now() - 60000)), // 1 minute ago
+      processingStartTime: createTimestamp(new Date(Date.now() - 30000)), // 30 seconds ago
+      completionTime: null,
+      error: null,
+      resultUrl: null,
+      detectedRegions: null,
+      templateUsed: 'template-002',
+    },
+  ],
+
+  completed: [
+    {
+      id: 'intel-mock-3',
+      status: 'completed',
+      sourceJobId: 'job-789',
+      sourceImageUrl: 'https://example.com/artwork3.png',
+      sourcePrompt: 'Vintage botanical illustration',
+      createdAt: createTimestamp(new Date(Date.now() - 300000)), // 5 minutes ago
+      processingStartTime: createTimestamp(new Date(Date.now() - 280000)),
+      completionTime: createTimestamp(new Date(Date.now() - 180000)), // 3 minutes ago
+      error: null,
+      resultUrl: 'https://example.com/intelligent-mockup-result.png',
+      detectedRegions: [
+        {
+          label: 'picture_frame',
+          confidence: 0.95,
+          bbox: [100, 150, 400, 450],
+        },
+        {
+          label: 'wall',
+          confidence: 0.87,
+          bbox: [0, 0, 800, 600],
+        },
+      ],
+      templateUsed: 'template-003',
+    },
+  ],
+
   failed: [
     {
       id: 'intel-mock-4',
@@ -77,11 +90,11 @@ export const mockIntelligentMockupJobs: Record<IntelligentMockupJobStatus | 'var
       error: {
         message: 'Processing took too long. This can happen with complex images.',
         type: 'timeout' as IntelligentMockupErrorType,
-        details: { processingTime: 300000 }
+        details: { processingTime: 300000 },
       },
       resultUrl: null,
       detectedRegions: null,
-      templateUsed: 'template-004'
+      templateUsed: 'template-004',
     },
     {
       id: 'intel-mock-5',
@@ -93,36 +106,38 @@ export const mockIntelligentMockupJobs: Record<IntelligentMockupJobStatus | 'var
       processingStartTime: createTimestamp(new Date(Date.now() - 880000)),
       completionTime: createTimestamp(new Date(Date.now() - 800000)),
       error: {
-        message: 'AI couldn\'t find suitable regions in the mockup template.',
+        message: "AI couldn't find suitable regions in the mockup template.",
         type: 'detection_failed' as IntelligentMockupErrorType,
-        details: { detectedRegions: 0 }
+        details: { detectedRegions: 0 },
       },
       resultUrl: null,
       detectedRegions: [],
-      templateUsed: 'template-005'
-    }
-  ],
-  
-  retried: [{
-    id: 'intel-mock-6',
-    status: 'retried',
-    sourceJobId: 'job-103',
-    sourceImageUrl: 'https://example.com/artwork6.png',
-    sourcePrompt: 'Digital art composition',
-    createdAt: createTimestamp(new Date(Date.now() - 1200000)), // 20 minutes ago
-    processingStartTime: createTimestamp(new Date(Date.now() - 1180000)),
-    completionTime: createTimestamp(new Date(Date.now() - 900000)),
-    error: {
-      message: 'gRPC message size exceeded limit',
-      type: 'grpc_error' as IntelligentMockupErrorType,
-      details: { messageSize: 8388608, limit: 4194304 }
+      templateUsed: 'template-005',
     },
-    resultUrl: null,
-    detectedRegions: null,
-    templateUsed: 'template-006',
-    retriedAt: createTimestamp(new Date(Date.now() - 600000))
-  }],
-  
+  ],
+
+  retried: [
+    {
+      id: 'intel-mock-6',
+      status: 'retried',
+      sourceJobId: 'job-103',
+      sourceImageUrl: 'https://example.com/artwork6.png',
+      sourcePrompt: 'Digital art composition',
+      createdAt: createTimestamp(new Date(Date.now() - 1200000)), // 20 minutes ago
+      processingStartTime: createTimestamp(new Date(Date.now() - 1180000)),
+      completionTime: createTimestamp(new Date(Date.now() - 900000)),
+      error: {
+        message: 'gRPC message size exceeded limit',
+        type: 'grpc_error' as IntelligentMockupErrorType,
+        details: { messageSize: 8388608, limit: 4194304 },
+      },
+      resultUrl: null,
+      detectedRegions: null,
+      templateUsed: 'template-006',
+      retriedAt: createTimestamp(new Date(Date.now() - 600000)),
+    },
+  ],
+
   various: [
     // Mix of different statuses for testing lists
     {
@@ -140,10 +155,10 @@ export const mockIntelligentMockupJobs: Record<IntelligentMockupJobStatus | 'var
         {
           label: 't_shirt',
           confidence: 0.92,
-          bbox: [50, 100, 350, 500]
-        }
+          bbox: [50, 100, 350, 500],
+        },
       ],
-      templateUsed: 'template-tshirt-001'
+      templateUsed: 'template-tshirt-001',
     },
     {
       id: 'intel-mock-8',
@@ -157,7 +172,7 @@ export const mockIntelligentMockupJobs: Record<IntelligentMockupJobStatus | 'var
       error: null,
       resultUrl: null,
       detectedRegions: null,
-      templateUsed: 'template-poster-001'
+      templateUsed: 'template-poster-001',
     },
     {
       id: 'intel-mock-9',
@@ -171,9 +186,9 @@ export const mockIntelligentMockupJobs: Record<IntelligentMockupJobStatus | 'var
       error: null,
       resultUrl: null,
       detectedRegions: null,
-      templateUsed: 'template-mug-001'
-    }
-  ]
+      templateUsed: 'template-mug-001',
+    },
+  ],
 };
 
 // Helper functions for testing
@@ -198,23 +213,23 @@ export const createMockIntelligentJob = (
     resultUrl: null,
     detectedRegions: null,
     templateUsed: 'template-test',
-    ...overrides
+    ...overrides,
   };
 };
 
 // Simulate status progression for testing
 export const simulateJobProgression = (job: IntelligentMockupJob): IntelligentMockupJob => {
   const now = new Date();
-  
+
   switch (job.status) {
     case 'pending':
       return {
         ...job,
         status: 'processing',
-        processingStartTime: createTimestamp(now)
+        processingStartTime: createTimestamp(now),
       };
-      
-    case 'processing':
+
+    case 'processing': {
       // 80% chance of success, 20% chance of failure
       const success = Math.random() > 0.2;
       if (success) {
@@ -231,13 +246,17 @@ export const simulateJobProgression = (job: IntelligentMockupJob): IntelligentMo
                 Math.floor(Math.random() * 100),
                 Math.floor(Math.random() * 100),
                 Math.floor(Math.random() * 100) + 200,
-                Math.floor(Math.random() * 100) + 200
-              ]
-            }
-          ]
+                Math.floor(Math.random() * 100) + 200,
+              ],
+            },
+          ],
         };
       } else {
-        const errorTypes: IntelligentMockupErrorType[] = ['timeout', 'detection_failed', 'grpc_error'];
+        const errorTypes: IntelligentMockupErrorType[] = [
+          'timeout',
+          'detection_failed',
+          'grpc_error',
+        ];
         const errorType = errorTypes[Math.floor(Math.random() * errorTypes.length)];
         return {
           ...job,
@@ -246,11 +265,12 @@ export const simulateJobProgression = (job: IntelligentMockupJob): IntelligentMo
           error: {
             message: `Test error: ${errorType}`,
             type: errorType,
-            details: { test: true }
-          }
+            details: { test: true },
+          },
         };
       }
-      
+    }
+
     default:
       return job;
   }

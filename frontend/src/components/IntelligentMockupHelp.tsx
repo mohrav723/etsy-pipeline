@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { Button, Drawer, Typography, Collapse, Space, Tag } from 'antd';
-import { QuestionCircleOutlined, RobotOutlined, ClockCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import {
+  QuestionCircleOutlined,
+  RobotOutlined,
+  ClockCircleOutlined,
+  CheckCircleOutlined,
+} from '@ant-design/icons';
 
 const { Title, Text, Paragraph } = Typography;
 const { Panel } = Collapse;
@@ -18,7 +23,7 @@ const IntelligentMockupHelp: React.FC = () => {
       >
         Help
       </Button>
-      
+
       <Drawer
         title={
           <Space>
@@ -35,8 +40,9 @@ const IntelligentMockupHelp: React.FC = () => {
           <div>
             <Title level={5}>What are Intelligent Mockups?</Title>
             <Paragraph>
-              Intelligent Mockups use AI to automatically detect the best placement areas in your templates 
-              and apply perspective correction to make your artwork look realistic and professional.
+              Intelligent Mockups use AI to automatically detect the best placement areas in your
+              templates and apply perspective correction to make your artwork look realistic and
+              professional.
             </Paragraph>
           </div>
 
@@ -44,9 +50,7 @@ const IntelligentMockupHelp: React.FC = () => {
             <Title level={5}>How it Works</Title>
             <Collapse defaultActiveKey={['1']}>
               <Panel header="1. Object Detection" key="1">
-                <Text>
-                  Our AI analyzes your mockup template to find suitable regions like:
-                </Text>
+                <Text>Our AI analyzes your mockup template to find suitable regions like:</Text>
                 <ul>
                   <li>Picture frames</li>
                   <li>T-shirt designs</li>
@@ -57,14 +61,14 @@ const IntelligentMockupHelp: React.FC = () => {
               </Panel>
               <Panel header="2. Perspective Transformation" key="2">
                 <Text>
-                  Your artwork is automatically warped and adjusted to match the perspective 
-                  of the detected region, ensuring it looks natural and realistic.
+                  Your artwork is automatically warped and adjusted to match the perspective of the
+                  detected region, ensuring it looks natural and realistic.
                 </Text>
               </Panel>
               <Panel header="3. Final Composition" key="3">
                 <Text>
-                  The transformed artwork is seamlessly integrated into the mockup, 
-                  with proper shadows and blending for a professional result.
+                  The transformed artwork is seamlessly integrated into the mockup, with proper
+                  shadows and blending for a professional result.
                 </Text>
               </Panel>
             </Collapse>
@@ -77,8 +81,8 @@ const IntelligentMockupHelp: React.FC = () => {
                 <ClockCircleOutlined /> Typical: 2-3 minutes
               </Text>
               <Text type="secondary">
-                Processing time varies based on template complexity and server load. 
-                Complex templates may take up to 5 minutes.
+                Processing time varies based on template complexity and server load. Complex
+                templates may take up to 5 minutes.
               </Text>
             </Space>
           </div>
@@ -87,13 +91,16 @@ const IntelligentMockupHelp: React.FC = () => {
             <Title level={5}>Best Practices</Title>
             <Space direction="vertical" size="small">
               <Text>
-                <CheckCircleOutlined style={{ color: '#52c41a' }} /> Use templates with clear placement areas
+                <CheckCircleOutlined style={{ color: '#52c41a' }} /> Use templates with clear
+                placement areas
               </Text>
               <Text>
-                <CheckCircleOutlined style={{ color: '#52c41a' }} /> Upload high-quality mockup templates
+                <CheckCircleOutlined style={{ color: '#52c41a' }} /> Upload high-quality mockup
+                templates
               </Text>
               <Text>
-                <CheckCircleOutlined style={{ color: '#52c41a' }} /> Ensure good contrast between placement area and background
+                <CheckCircleOutlined style={{ color: '#52c41a' }} /> Ensure good contrast between
+                placement area and background
               </Text>
             </Space>
           </div>

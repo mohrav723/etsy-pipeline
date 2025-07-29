@@ -15,9 +15,8 @@ export const JOB_STATUS = {
   COMPLETED: 'completed',
   FAILED: 'failed',
   APPROVED: 'approved',
-  PENDING_REVIEW: 'pending_review'
+  PENDING_REVIEW: 'pending_review',
 } as const;
-
 
 // API limits
 export const MAX_PROMPT_LENGTH = 1000;
@@ -30,7 +29,7 @@ export const GENERATION_DEFAULTS = {
   guidance: 3,
   safetyTolerance: 2,
   seed: 42,
-  promptUpsampling: false
+  promptUpsampling: false,
 } as const;
 
 // Timeouts
@@ -41,14 +40,14 @@ export const COST_REFRESH_INTERVAL_MS = 60000; // 1 minute
 export const SLIDER_RANGES = {
   steps: { min: 1, max: 50 },
   guidance: { min: 1.5, max: 5, step: 0.1 },
-  safetyTolerance: { min: 0, max: 6, step: 1 }
+  safetyTolerance: { min: 0, max: 6, step: 1 },
 } as const;
 
 // Aspect ratios
 export const ASPECT_RATIOS = [
   { value: '16:9', label: '16:9 (Landscape)' },
   { value: '1:1', label: '1:1 (Square)' },
-  { value: '9:16', label: '9:16 (Portrait)' }
+  { value: '9:16', label: '9:16 (Portrait)' },
 ] as const;
 
 // Style constants
@@ -62,22 +61,22 @@ export const INTELLIGENT_MOCKUP_STATUS = {
   PROCESSING: 'processing',
   COMPLETED: 'completed',
   FAILED: 'failed',
-  RETRIED: 'retried'
+  RETRIED: 'retried',
 } as const;
 
 export const INTELLIGENT_MOCKUP_ERRORS = {
   TIMEOUT: 'timeout',
   DETECTION_FAILED: 'detection_failed',
   GRPC_ERROR: 'grpc_error',
-  UNKNOWN: 'unknown'
+  UNKNOWN: 'unknown',
 } as const;
 
 export const POLLING_INTERVALS = {
-  ACTIVE: 2000,  // 2 seconds when processing
-  IDLE: 5000     // 5 seconds when idle
+  ACTIVE: 2000, // 2 seconds when processing
+  IDLE: 5000, // 5 seconds when idle
 } as const;
 
 export const INTELLIGENT_MOCKUP_TIMEOUTS = {
   MAX_PROCESSING_TIME: 600000, // 10 minutes (increased for non-optimized backend)
-  RETRY_DELAY: 1000           // 1 second before retry
+  RETRY_DELAY: 1000, // 1 second before retry
 } as const;

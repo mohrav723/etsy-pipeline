@@ -25,6 +25,7 @@ backend/.pytest_cache
 
 # General
 *.log
+.vscode/
 .env
 .claude
 .kiro

@@ -1,26 +1,38 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Spin, Steps, Button, Typography, Space, Image, Alert, Tag, Progress, Tooltip, List } from 'antd';
-import { 
-  RobotOutlined, 
-  LoadingOutlined, 
-  CheckCircleOutlined, 
+import {
+  Card,
+  Spin,
+  Steps,
+  Button,
+  Typography,
+  Space,
+  Image,
+  Alert,
+  Tag,
+  Progress,
+  Tooltip,
+  List,
+} from 'antd';
+import {
+  RobotOutlined,
+  LoadingOutlined,
+  CheckCircleOutlined,
   CloseCircleOutlined,
   ReloadOutlined,
   ClockCircleOutlined,
   EyeOutlined,
   DownloadOutlined,
   QuestionCircleOutlined,
-  WarningOutlined
+  WarningOutlined,
 } from '@ant-design/icons';
 import { IntelligentMockupJob } from '../types';
-import { INTELLIGENT_MOCKUP_STATUS, INTELLIGENT_MOCKUP_ERRORS, INTELLIGENT_MOCKUP_TIMEOUTS } from '../constants';
-import { Timestamp } from 'firebase/firestore';
-import { 
-  getIntelligentMockupErrorMessage, 
-  getErrorSuggestedActions, 
+import { INTELLIGENT_MOCKUP_STATUS } from '../constants';
+import {
+  getIntelligentMockupErrorMessage,
+  getErrorSuggestedActions,
   formatProcessingTime,
   getProcessingProgress,
-  hasJobTimedOut 
+  hasJobTimedOut,
 } from '../utils/intelligentMockupHelpers';
 
 const { Text, Title } = Typography;
@@ -41,13 +53,13 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
         setProgress(getProcessingProgress(job));
         setShowTimeout(hasJobTimedOut(job));
       }, 1000);
-      
+
       return () => clearInterval(interval);
     }
   }, [job]);
 
   // Get current step for progress display
-  const getCurrentStep = (): number => {
+  const _getCurrentStep = (): number => {
     switch (job.status) {
       case INTELLIGENT_MOCKUP_STATUS.PENDING:
         return 0;
@@ -62,7 +74,6 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
         return 0;
     }
   };
-
 
   // Render status-specific content
   const renderContent = () => {
@@ -80,7 +91,7 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
 
       case INTELLIGENT_MOCKUP_STATUS.PROCESSING:
         return (
-          <Spin 
+          <Spin
             indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}
             tip="AI is analyzing your mockup template..."
           >
@@ -89,41 +100,41 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
                 current={1}
                 size="small"
                 items={[
-                  { 
+                  {
                     title: 'Queued',
                     description: 'Ready to process',
-                    icon: <CheckCircleOutlined />
+                    icon: <CheckCircleOutlined />,
                   },
-                  { 
+                  {
                     title: 'Detecting Regions',
                     description: (
                       <Tooltip title="AI analyzes the template to find frames, products, or surfaces where your artwork can be placed">
                         Finding suitable areas
                       </Tooltip>
                     ),
-                    icon: <LoadingOutlined spin />
+                    icon: <LoadingOutlined spin />,
                   },
-                  { 
+                  {
                     title: 'Transforming',
                     description: (
                       <Tooltip title="Your artwork is warped and adjusted to match the perspective and shape of the detected region">
                         Applying perspective
                       </Tooltip>
-                    )
+                    ),
                   },
-                  { 
+                  {
                     title: 'Composing',
                     description: (
                       <Tooltip title="The transformed artwork is seamlessly integrated into the mockup template">
                         Creating final image
                       </Tooltip>
-                    )
-                  }
+                    ),
+                  },
                 ]}
               />
               <div style={{ marginTop: 24 }}>
-                <Progress 
-                  percent={progress} 
+                <Progress
+                  percent={progress}
                   status={showTimeout ? 'exception' : 'active'}
                   strokeColor={showTimeout ? '#ff4d4f' : '#1890ff'}
                 />
@@ -142,10 +153,7 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
                     style={{ marginTop: 16 }}
                     action={
                       onRetry && (
-                        <Button 
-                          size="small" 
-                          onClick={() => onRetry(job.id)}
-                        >
+                        <Button size="small" onClick={() => onRetry(job.id)}>
                           Cancel & Retry
                         </Button>
                       )
@@ -157,61 +165,80 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
           </Spin>
         );
 
-      case INTELLIGENT_MOCKUP_STATUS.COMPLETED:
+      case INTELLIGENT_MOCKUP_STATUS.COMPLETED: {
         const hasMultipleResults = job.mockup_results && job.mockup_results.length > 0;
         const hasSingleResult = job.result_url && !hasMultipleResults;
-        
+
         return (
           <div>
             {hasMultipleResults ? (
               <>
-                <Space direction="vertical" size="small" style={{ width: '100%', marginBottom: 16 }}>
+                <Space
+                  direction="vertical"
+                  size="small"
+                  style={{ width: '100%', marginBottom: 16 }}
+                >
                   <Text type="secondary">
-                    Completed in {formatProcessingTime(job.processingStartTime || job.processing_started_at, job.completionTime || job.processing_completed_at)}
+                    Completed in{' '}
+                    {formatProcessingTime(
+                      job.processingStartTime || job.processing_started_at,
+                      job.completionTime || job.processing_completed_at
+                    )}
                   </Text>
                   <Text>
-                    Generated {job.total_mockups_generated || job.mockup_results.length} intelligent mockups
-                    {job.detected_regions_total && ` across ${job.detected_regions_total} detected regions`}
+                    Generated {job.total_mockups_generated || job.mockup_results.length} intelligent
+                    mockups
+                    {job.detected_regions_total &&
+                      ` across ${job.detected_regions_total} detected regions`}
                   </Text>
                 </Space>
-                
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                  gap: 12,
-                  marginBottom: 16
-                }}>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
                   {job.mockup_results.map((result, index) => (
-                    <div key={index} style={{ 
-                      border: '1px solid #f0f0f0', 
-                      borderRadius: 8,
-                      overflow: 'hidden',
-                      background: '#fafafa'
-                    }}>
+                    <div
+                      key={index}
+                      style={{
+                        border: '1px solid #f0f0f0',
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                        background: '#fafafa',
+                      }}
+                    >
                       <Image
                         src={result.url}
                         alt={`${result.template_name} mockup`}
                         style={{ width: '100%', height: 200, objectFit: 'cover' }}
                         placeholder={
-                          <div style={{ 
-                            background: '#f0f0f0', 
-                            height: 200, 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center' 
-                          }}>
+                          <div
+                            style={{
+                              background: '#f0f0f0',
+                              height: 200,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
                             <Spin size="small" />
                           </div>
                         }
                       />
                       <div style={{ padding: 8 }}>
-                        <Text strong style={{ fontSize: 12 }}>{result.template_name}</Text>
+                        <Text strong style={{ fontSize: 12 }}>
+                          {result.template_name}
+                        </Text>
                         <br />
                         <Text type="secondary" style={{ fontSize: 11 }}>
                           {result.detected_regions} regions • {result.selected_region}
                         </Text>
                         <div style={{ marginTop: 8 }}>
-                          <Button 
+                          <Button
                             size="small"
                             icon={<DownloadOutlined />}
                             onClick={() => {
@@ -238,13 +265,15 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
                     alt="Intelligent mockup result"
                     style={{ width: '100%', borderRadius: 8 }}
                     placeholder={
-                      <div style={{ 
-                        background: '#f0f0f0', 
-                        height: 200, 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center' 
-                      }}>
+                      <div
+                        style={{
+                          background: '#f0f0f0',
+                          height: 200,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
                         <Spin />
                       </div>
                     }
@@ -259,24 +288,26 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
                 </div>
                 <Space direction="vertical" size="small" style={{ width: '100%' }}>
                   <Text type="secondary">
-                    Completed in {formatProcessingTime(job.processingStartTime || job.processing_started_at, job.completionTime || job.processing_completed_at)}
+                    Completed in{' '}
+                    {formatProcessingTime(
+                      job.processingStartTime || job.processing_started_at,
+                      job.completionTime || job.processing_completed_at
+                    )}
                   </Text>
                   {job.selected_region && (
                     <div>
                       <Text type="secondary">Selected region: </Text>
-                      <Tag style={{ marginRight: 4 }}>
-                        {job.selected_region}
-                      </Tag>
+                      <Tag style={{ marginRight: 4 }}>{job.selected_region}</Tag>
                     </div>
                   )}
                   <Space>
-                    <Button 
-                      icon={<EyeOutlined />} 
+                    <Button
+                      icon={<EyeOutlined />}
                       onClick={() => window.open(job.result_url!, '_blank')}
                     >
                       View Full Size
                     </Button>
-                    <Button 
+                    <Button
                       type="primary"
                       icon={<DownloadOutlined />}
                       onClick={() => {
@@ -300,9 +331,10 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
             )}
           </div>
         );
+      }
 
       case INTELLIGENT_MOCKUP_STATUS.FAILED:
-      case INTELLIGENT_MOCKUP_STATUS.RETRIED:
+      case INTELLIGENT_MOCKUP_STATUS.RETRIED: {
         const suggestions = getErrorSuggestedActions(job.error);
         return (
           <div>
@@ -318,7 +350,7 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
                       <List
                         size="small"
                         dataSource={suggestions}
-                        renderItem={item => (
+                        renderItem={(item) => (
                           <List.Item style={{ padding: '4px 0', border: 'none' }}>
                             <Text style={{ fontSize: 12 }}>• {item}</Text>
                           </List.Item>
@@ -332,21 +364,19 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
               icon={<CloseCircleOutlined />}
               style={{ marginBottom: 16 }}
               action={
-                job.status === INTELLIGENT_MOCKUP_STATUS.FAILED && onRetry && (
+                job.status === INTELLIGENT_MOCKUP_STATUS.FAILED &&
+                onRetry && (
                   <Space>
-                    <Button 
-                      size="small" 
-                      danger 
+                    <Button
+                      size="small"
+                      danger
                       icon={<ReloadOutlined />}
                       onClick={() => onRetry(job.id)}
                     >
                       Retry
                     </Button>
                     <Tooltip title="Try using simple mockups for faster results">
-                      <Button 
-                        size="small" 
-                        icon={<QuestionCircleOutlined />}
-                      >
+                      <Button size="small" icon={<QuestionCircleOutlined />}>
                         Help
                       </Button>
                     </Tooltip>
@@ -356,17 +386,17 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
             />
             {job.error?.details && (
               <details style={{ marginTop: 8 }}>
-                <summary style={{ cursor: 'pointer', color: '#8c8c8c' }}>
-                  Technical details
-                </summary>
-                <pre style={{ 
-                  fontSize: 12, 
-                  background: '#f5f5f5', 
-                  padding: 8, 
-                  borderRadius: 4,
-                  overflow: 'auto',
-                  marginTop: 8 
-                }}>
+                <summary style={{ cursor: 'pointer', color: '#8c8c8c' }}>Technical details</summary>
+                <pre
+                  style={{
+                    fontSize: 12,
+                    background: '#f5f5f5',
+                    padding: 8,
+                    borderRadius: 4,
+                    overflow: 'auto',
+                    marginTop: 8,
+                  }}
+                >
                   {JSON.stringify(job.error.details, null, 2)}
                 </pre>
               </details>
@@ -378,6 +408,7 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
             )}
           </div>
         );
+      }
 
       default:
         return null;
@@ -432,14 +463,14 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
       }
       extra={
         <Tooltip title={job.sourcePrompt}>
-          <Text 
-            type="secondary" 
-            style={{ 
-              maxWidth: 200, 
-              overflow: 'hidden', 
-              textOverflow: 'ellipsis', 
+          <Text
+            type="secondary"
+            style={{
+              maxWidth: 200,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              display: 'inline-block'
+              display: 'inline-block',
             }}
           >
             {job.sourcePrompt}
@@ -449,15 +480,17 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
       style={{ marginBottom: 16 }}
     >
       {renderContent()}
-      
-      <div style={{ 
-        marginTop: 16, 
-        paddingTop: 16, 
-        borderTop: '1px solid #f0f0f0',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
+
+      <div
+        style={{
+          marginTop: 16,
+          paddingTop: 16,
+          borderTop: '1px solid #f0f0f0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <Text type="secondary" style={{ fontSize: 12 }}>
           Created {job.createdAt ? job.createdAt.toDate().toLocaleString() : 'Just now'}
         </Text>

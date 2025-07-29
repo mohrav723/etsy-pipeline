@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, limit, where, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, Timestamp } from 'firebase/firestore';
 import ErrorBoundary from './ErrorBoundary';
 
 type CostRecord = {
@@ -37,14 +37,14 @@ const CostMonitoring = () => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
-    const recentCosts = allCosts.filter(cost => 
-      cost.timestamp && new Date(cost.timestamp) > cutoffDate
+    const recentCosts = allCosts.filter(
+      (cost) => cost.timestamp && new Date(cost.timestamp) > cutoffDate
     );
 
     let bflTotal = 0;
     let storageTotal = 0;
 
-    recentCosts.forEach(cost => {
+    recentCosts.forEach((cost) => {
       if (cost.costType === 'bfl_generation') {
         bflTotal += cost.amount;
       } else if (cost.costType === 'storage_upload') {
@@ -57,7 +57,7 @@ const CostMonitoring = () => {
       bfl_api: bflTotal,
       google_storage: storageTotal,
       count: recentCosts.length,
-      period: `${days} days`
+      period: `${days} days`,
     });
   }, []);
 
@@ -67,35 +67,35 @@ const CostMonitoring = () => {
     const loadCosts = () => {
       try {
         const costsCollection = collection(db, 'costs');
-        const q = query(
-          costsCollection,
-          orderBy('timestamp', 'desc'),
-          limit(100)
-        );
+        const q = query(costsCollection, orderBy('timestamp', 'desc'), limit(100));
 
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const costsFromFirestore: CostRecord[] = [];
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            costsFromFirestore.push({ 
-              id: doc.id, 
-              jobId: data.job_id || data.jobId,
-              costType: data.cost_type || data.costType,
-              amount: data.cost_usd || data.amount,
-              timestamp: data.timestamp,
-              details: data.details || {}
-            } as CostRecord);
-          });
-          
-          setCosts(costsFromFirestore);
-          calculateSummary(costsFromFirestore, parseInt(selectedPeriod));
-          setIsLoading(false);
-          setError(null);
-        }, (error) => {
-          // Error handled via state
-          setError('Failed to load cost data');
-          setIsLoading(false);
-        });
+        unsubscribe = onSnapshot(
+          q,
+          (snapshot) => {
+            const costsFromFirestore: CostRecord[] = [];
+            snapshot.forEach((doc) => {
+              const data = doc.data();
+              costsFromFirestore.push({
+                id: doc.id,
+                jobId: data.job_id || data.jobId,
+                costType: data.cost_type || data.costType,
+                amount: data.cost_usd || data.amount,
+                timestamp: data.timestamp,
+                details: data.details || {},
+              } as CostRecord);
+            });
+
+            setCosts(costsFromFirestore);
+            calculateSummary(costsFromFirestore, parseInt(selectedPeriod));
+            setIsLoading(false);
+            setError(null);
+          },
+          (_error) => {
+            // Error handled via state
+            setError('Failed to load cost data');
+            setIsLoading(false);
+          }
+        );
       } catch (error) {
         // Error handling for setup
         setError(`Setup error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -116,7 +116,7 @@ const CostMonitoring = () => {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 6
+      maximumFractionDigits: 6,
     }).format(amount);
   };
 
@@ -125,30 +125,39 @@ const CostMonitoring = () => {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     }).format(date);
   };
 
   const getServiceIcon = (costType: string) => {
     switch (costType) {
-      case 'bfl_generation': return '🎨';
-      case 'storage_upload': return '☁️';
-      case 'object_detection': return '🔍';
-      case 'perspective_transform': return '🖼️';
-      default: return '💰';
+      case 'bfl_generation':
+        return '🎨';
+      case 'storage_upload':
+        return '☁️';
+      case 'object_detection':
+        return '🔍';
+      case 'perspective_transform':
+        return '🖼️';
+      default:
+        return '💰';
     }
   };
 
   const getServiceName = (costType: string) => {
     switch (costType) {
-      case 'bfl_generation': return 'BFL API';
-      case 'storage_upload': return 'Storage Upload';
-      case 'object_detection': return 'Object Detection';
-      case 'perspective_transform': return 'Perspective Transform';
-      default: return costType;
+      case 'bfl_generation':
+        return 'BFL API';
+      case 'storage_upload':
+        return 'Storage Upload';
+      case 'object_detection':
+        return 'Object Detection';
+      case 'perspective_transform':
+        return 'Perspective Transform';
+      default:
+        return costType;
     }
   };
-
 
   const theme = {
     colors: {
@@ -160,7 +169,7 @@ const CostMonitoring = () => {
       success: '#57f287',
       warning: '#faa61a',
       error: '#ed4245',
-    }
+    },
   };
 
   const styles = {
@@ -282,13 +291,13 @@ const CostMonitoring = () => {
         <div style={styles.header}>
           <h2 style={styles.title}>💰 Cost Monitoring</h2>
           <div style={styles.periodSelector}>
-            {(['7', '30', '90'] as const).map(period => (
+            {(['7', '30', '90'] as const).map((period) => (
               <button
                 key={period}
                 onClick={() => setSelectedPeriod(period)}
                 style={{
                   ...styles.periodButton,
-                  ...(selectedPeriod === period ? styles.periodButtonActive : {})
+                  ...(selectedPeriod === period ? styles.periodButtonActive : {}),
                 }}
               >
                 {period} days
@@ -297,75 +306,66 @@ const CostMonitoring = () => {
           </div>
         </div>
 
-        {error && (
-          <div style={styles.error}>
-            ❌ {error}
-          </div>
-        )}
+        {error && <div style={styles.error}>❌ {error}</div>}
 
         {summary && (
           <>
             <div style={styles.summaryGrid}>
               <div style={styles.summaryCard}>
-                <div style={{...styles.summaryValue, color: theme.colors.primary}}>
+                <div style={{ ...styles.summaryValue, color: theme.colors.primary }}>
                   {formatCurrency(summary.total)}
                 </div>
                 <p style={styles.summaryLabel}>Total Cost ({summary.period})</p>
               </div>
-              
+
               <div style={styles.summaryCard}>
-                <div style={{...styles.summaryValue, color: theme.colors.success}}>
+                <div style={{ ...styles.summaryValue, color: theme.colors.success }}>
                   {formatCurrency(summary.bfl_api)}
                 </div>
                 <p style={styles.summaryLabel}>🎨 BFL API</p>
               </div>
-              
+
               <div style={styles.summaryCard}>
-                <div style={{...styles.summaryValue, color: theme.colors.warning}}>
+                <div style={{ ...styles.summaryValue, color: theme.colors.warning }}>
                   {formatCurrency(summary.google_storage)}
                 </div>
                 <p style={styles.summaryLabel}>☁️ Google Storage</p>
               </div>
-              
+
               <div style={styles.summaryCard}>
-                <div style={{...styles.summaryValue, color: theme.colors.textMuted}}>
+                <div style={{ ...styles.summaryValue, color: theme.colors.textMuted }}>
                   {summary.count}
                 </div>
                 <p style={styles.summaryLabel}>Total Operations</p>
               </div>
             </div>
 
-
             <div style={styles.recentCosts}>
-              <h3 style={{marginTop: 0}}>Recent Costs</h3>
+              <h3 style={{ marginTop: 0 }}>Recent Costs</h3>
               {costs.length === 0 ? (
-                <p style={{color: theme.colors.textMuted, textAlign: 'center'}}>
+                <p style={{ color: theme.colors.textMuted, textAlign: 'center' }}>
                   No cost data available yet
                 </p>
               ) : (
                 costs.slice(0, 10).map((cost, index) => (
-                  <div 
+                  <div
                     key={cost.id}
                     style={{
                       ...styles.costItem,
-                      ...(index === Math.min(costs.length - 1, 9) ? styles.costItemLast : {})
+                      ...(index === Math.min(costs.length - 1, 9) ? styles.costItemLast : {}),
                     }}
                   >
                     <div style={styles.costLeft}>
                       <span>{getServiceIcon(cost.costType)}</span>
                       <div>
-                        <div style={styles.costService}>
-                          {getServiceName(cost.costType)}
-                        </div>
+                        <div style={styles.costService}>{getServiceName(cost.costType)}</div>
                         <div style={styles.costDetails}>
                           {formatDate(cost.timestamp.toDate())} • Job: {cost.jobId.slice(0, 8)}...
                           {cost.details?.steps && ` • ${cost.details.steps} steps`}
                         </div>
                       </div>
                     </div>
-                    <div style={styles.costAmount}>
-                      {formatCurrency(cost.amount)}
-                    </div>
+                    <div style={styles.costAmount}>{formatCurrency(cost.amount)}</div>
                   </div>
                 ))
               )}

@@ -1,29 +1,24 @@
 import React, { useState } from 'react';
-import { 
-  Card, 
-  Button, 
-  Typography, 
-  Space, 
-  Image, 
-  Collapse, 
-  Form, 
-  Input, 
-  Select, 
-  Slider, 
-  InputNumber, 
+import {
+  Card,
+  Button,
+  Typography,
+  Space,
+  Image,
+  Collapse,
+  Form,
+  Input,
+  Select,
+  Slider,
+  InputNumber,
   Checkbox,
   message,
-  Spin
+  Spin,
 } from 'antd';
-import { 
-  ReloadOutlined, 
-  SettingOutlined,
-  LoadingOutlined
-} from '@ant-design/icons';
+import { ReloadOutlined, SettingOutlined, LoadingOutlined } from '@ant-design/icons';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import MockupButton from './MockupButton';
-import { RegenerationFormValues } from '../types';
 import { REGENERATION_TIMEOUT_MS, SLIDER_RANGES, ASPECT_RATIOS, JOB_STATUS } from '../constants';
 import { ErrorService } from '../services/errorService';
 
@@ -53,7 +48,7 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [form] = Form.useForm();
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  
+
   // Initialize form with current job values
   React.useEffect(() => {
     form.setFieldsValue({
@@ -63,17 +58,17 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
       guidance: job.guidance,
       safetyTolerance: job.safetyTolerance,
       seed: job.seed,
-      promptUpsampling: job.promptUpsampling
+      promptUpsampling: job.promptUpsampling,
     });
   }, [job, form]);
-  
+
   // Clear regenerating state when the job changes (new image loaded)
   React.useEffect(() => {
     if (isRegenerating) {
       setIsRegenerating(false);
     }
   }, [job.generatedImageUrl, isRegenerating]);
-  
+
   // Cleanup timeout on unmount
   React.useEffect(() => {
     return () => {
@@ -87,7 +82,7 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
     try {
       const values = await form.validateFields();
       setIsRegenerating(true);
-      
+
       // Creating new generation from job
 
       // Create a new job entry instead of updating the existing one
@@ -103,24 +98,21 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
         createdAt: serverTimestamp(),
         originalJobId: job.id, // Reference to the job this was regenerated from
       };
-      
-      const docRef = await addDoc(collection(db, 'jobs'), newJobData);
-      
+
+      await addDoc(collection(db, 'jobs'), newJobData);
+
       message.success('Regeneration job submitted successfully!');
-      
+
       // Set a timeout to clear loading state if no new image appears
       timeoutRef.current = setTimeout(() => {
         setIsRegenerating(false);
         timeoutRef.current = null;
       }, REGENERATION_TIMEOUT_MS);
-      
     } catch (error) {
       ErrorService.showError(error, 'Art regeneration');
       setIsRegenerating(false);
     }
   };
-  
-
 
   const parameterEditorItems = [
     {
@@ -132,11 +124,7 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
         </Space>
       ),
       children: (
-        <Form
-          form={form}
-          layout="vertical"
-          size="small"
-        >
+        <Form form={form} layout="vertical" size="small">
           <Form.Item
             label="Prompt"
             name="prompt"
@@ -147,7 +135,7 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
 
           <Form.Item label="Aspect Ratio" name="aspectRatio">
             <Select>
-              {ASPECT_RATIOS.map(ratio => (
+              {ASPECT_RATIOS.map((ratio) => (
                 <Select.Option key={ratio.value} value={ratio.value}>
                   {ratio.label}
                 </Select.Option>
@@ -198,22 +186,26 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
       style={{ width: '100%' }}
       styles={{ body: { padding: '20px' } }}
       cover={
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          padding: '20px', 
-          backgroundColor: '#2f3136',
-          minHeight: '300px'
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '20px',
+            backgroundColor: '#2f3136',
+            minHeight: '300px',
+          }}
+        >
           {isRegenerating ? (
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              gap: '16px',
-              color: '#ffffff'
-            }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '16px',
+                color: '#ffffff',
+              }}
+            >
               <Spin size="large" />
               <Typography.Text style={{ color: '#b9bbbe', fontSize: '16px' }}>
                 Generating new image...
@@ -223,11 +215,11 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
             <Image
               src={job.generatedImageUrl}
               alt="AI generated art"
-              style={{ 
-                maxWidth: '100%', 
+              style={{
+                maxWidth: '100%',
                 maxHeight: '500px',
                 borderRadius: '8px',
-                objectFit: 'contain'
+                objectFit: 'contain',
               }}
               onError={() => {
                 ErrorService.showError(new Error('Failed to load image'), 'Image loading');
@@ -264,8 +256,8 @@ const ArtReviewCard = ({ job }: ArtReviewCardProps) => {
                 "{job.prompt}"
               </Text>
             </div>
-            
-            <Collapse 
+
+            <Collapse
               items={parameterEditorItems}
               size="small"
               ghost

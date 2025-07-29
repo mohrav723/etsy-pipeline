@@ -24,7 +24,7 @@ export class ErrorService {
       return {
         message: error.message,
         code: 'GENERIC_ERROR',
-        context
+        context,
       };
     }
 
@@ -32,7 +32,7 @@ export class ErrorService {
     return {
       message: 'An unexpected error occurred',
       code: 'UNKNOWN_ERROR',
-      context
+      context,
     };
   }
 
@@ -47,21 +47,21 @@ export class ErrorService {
       'auth/weak-password': 'Password is too weak',
       'auth/invalid-email': 'Invalid email address',
       'permission-denied': 'You do not have permission to perform this action',
-      'unavailable': 'Service is temporarily unavailable',
+      unavailable: 'Service is temporarily unavailable',
       'deadline-exceeded': 'Operation timed out',
       'resource-exhausted': 'Quota exceeded',
       'failed-precondition': 'Operation failed due to system state',
-      'aborted': 'Operation was cancelled',
+      aborted: 'Operation was cancelled',
       'already-exists': 'Resource already exists',
       'not-found': 'Resource not found',
     };
 
     const message = errorMap[error.code] || `Firebase error: ${error.message}`;
-    
+
     return {
       message,
       code: error.code,
-      context: 'firebase'
+      context: 'firebase',
     };
   }
 
@@ -98,8 +98,10 @@ export class ErrorService {
    */
   static isNetworkError(error: unknown): boolean {
     if (error instanceof Error) {
-      return error.message.toLowerCase().includes('network') ||
-             error.message.toLowerCase().includes('fetch');
+      return (
+        error.message.toLowerCase().includes('network') ||
+        error.message.toLowerCase().includes('fetch')
+      );
     }
     return false;
   }

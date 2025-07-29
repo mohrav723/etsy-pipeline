@@ -45,10 +45,7 @@ class ErrorBoundary extends Component<Props, State> {
                 {this.state.error?.stack}
               </pre>
             </details>
-            <button 
-              style={styles.errorButton}
-              onClick={() => window.location.reload()}
-            >
+            <button style={styles.errorButton} onClick={() => window.location.reload()}>
               🔄 Refresh Page
             </button>
           </div>
