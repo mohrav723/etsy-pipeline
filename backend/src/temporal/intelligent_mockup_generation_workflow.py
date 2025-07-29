@@ -140,7 +140,8 @@ async def detect_suitable_regions(template_bytes: bytes, job_id: str) -> List[Di
     if backend_path not in sys.path:
         sys.path.insert(0, backend_path)
     
-    from src.services.object_detection import ObjectDetectionService, NoSuitableRegionsError
+    from src.services.object_detection import NoSuitableRegionsError
+    from src.services.opencv_detection.compatibility_wrapper import create_object_detection_service
     from src.cost_tracker import CostTracker
     
     activity.logger.info(f"Starting object detection for job {job_id}")
@@ -152,8 +153,10 @@ async def detect_suitable_regions(template_bytes: bytes, job_id: str) -> List[Di
         template_image = Image.open(io.BytesIO(template_bytes))
         activity.logger.info(f"Template image size: {template_image.size}")
         
-        # Initialize object detection service
-        detection_service = ObjectDetectionService()
+        # Initialize object detection service with feature flag support
+        detection_service = create_object_detection_service(job_id=job_id)
+        service_type = "OpenCV" if detection_service.use_opencv else "DETR"
+        activity.logger.info(f"Using {service_type} detection service")
         
         # Find suitable regions
         detected_regions = detection_service.find_suitable_regions(template_image)

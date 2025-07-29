@@ -116,7 +116,7 @@ async def download_and_process_images(artwork_url: str, mockup_template: str, jo
     if backend_path not in sys.path:
         sys.path.insert(0, backend_path)
     
-    from src.services.object_detection_optimized import ObjectDetectionService, NoSuitableRegionsError
+    from src.services.object_detection import NoSuitableRegionsError
     from src.cost_tracker import CostTracker
     
     activity.logger.info(f"Processing images for job {job_id}")
@@ -161,8 +161,11 @@ async def download_and_process_images(artwork_url: str, mockup_template: str, jo
         template_size = template_image.size
         activity.logger.info(f"Template image size: {template_size}")
         
-        # Initialize object detection service with lightweight settings
-        detection_service = ObjectDetectionService()
+        # Initialize object detection service with feature flag support
+        from src.services.opencv_detection.compatibility_wrapper import create_object_detection_service
+        detection_service = create_object_detection_service(job_id=job_id)
+        service_type = "OpenCV" if detection_service.use_opencv else "DETR"
+        activity.logger.info(f"Using {service_type} detection service")
         
         # Find suitable regions
         detected_regions = detection_service.find_suitable_regions(template_image)
