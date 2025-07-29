@@ -25,6 +25,7 @@ import {
   QuestionCircleOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
+import DOMPurify from 'dompurify';
 import { IntelligentMockupJob } from '../types';
 import { INTELLIGENT_MOCKUP_STATUS } from '../constants';
 import {
@@ -34,6 +35,7 @@ import {
   getProcessingProgress,
   hasJobTimedOut,
 } from '../utils/intelligentMockupHelpers';
+import { useSecureDownload } from '../utils/secureDownload';
 
 const { Text, Title } = Typography;
 
@@ -45,6 +47,7 @@ interface IntelligentMockupCardProps {
 const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRetry }) => {
   const [showTimeout, setShowTimeout] = useState(false);
   const [progress, setProgress] = useState(0);
+  const { download } = useSecureDownload(['firebasestorage.googleapis.com']);
 
   // Check for timeout and update progress
   useEffect(() => {
@@ -241,11 +244,15 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
                           <Button
                             size="small"
                             icon={<DownloadOutlined />}
-                            onClick={() => {
-                              const link = document.createElement('a');
-                              link.href = result.url;
-                              link.download = `intelligent-mockup-${job.id}-${result.template_name}.png`;
-                              link.click();
+                            onClick={async () => {
+                              try {
+                                await download(
+                                  result.url,
+                                  `intelligent-mockup-${job.id}-${result.template_name}.png`
+                                );
+                              } catch (error) {
+                                console.error('Download failed:', error);
+                              }
                             }}
                             block
                           >
@@ -310,11 +317,15 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
                     <Button
                       type="primary"
                       icon={<DownloadOutlined />}
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = job.result_url!;
-                        link.download = `intelligent-mockup-${job.id}.png`;
-                        link.click();
+                      onClick={async () => {
+                        try {
+                          await download(
+                            job.result_url!,
+                            `intelligent-mockup-${job.id}.png`
+                          );
+                        } catch (error) {
+                          console.error('Download failed:', error);
+                        }
                       }}
                     >
                       Download
@@ -396,9 +407,10 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
                     overflow: 'auto',
                     marginTop: 8,
                   }}
-                >
-                  {JSON.stringify(job.error.details, null, 2)}
-                </pre>
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(JSON.stringify(job.error.details, null, 2)),
+                  }}
+                />
               </details>
             )}
             {job.status === INTELLIGENT_MOCKUP_STATUS.RETRIED && job.retriedAt && (
