@@ -37,6 +37,11 @@ export interface Job {
   createdAt: Timestamp;
   approved?: boolean;
   approvedAt?: Timestamp;
+  // Generation parameters
+  aspectRatio?: string;
+  safetyTolerance?: number;
+  promptUpsampling?: boolean;
+  originalJobId?: string; // Reference to the job this was regenerated from
 }
 
 export interface Mockup {

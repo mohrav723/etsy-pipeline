@@ -24,6 +24,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLDivElement>(null);
+  const imageLoadRef = useRef<HTMLImageElement | null>(null);
   const [imageSrc, setImageSrc] = useState(placeholder || '');
 
   useEffect(() => {
@@ -52,21 +53,39 @@ const LazyImage: React.FC<LazyImageProps> = ({
   useEffect(() => {
     if (isIntersecting && src) {
       const img = new Image();
-      img.src = src;
-      
+      imageLoadRef.current = img;
+
       img.onload = () => {
-        setImageSrc(src);
-        setIsLoaded(true);
-        setHasError(false);
-        onLoad?.();
+        // Check if component is still mounted
+        if (imageLoadRef.current === img) {
+          setImageSrc(src);
+          setIsLoaded(true);
+          setHasError(false);
+          onLoad?.();
+        }
       };
-      
+
       img.onerror = () => {
-        setHasError(true);
-        setIsLoaded(true);
-        onError?.();
+        // Check if component is still mounted
+        if (imageLoadRef.current === img) {
+          setHasError(true);
+          setIsLoaded(true);
+          onError?.();
+        }
       };
+
+      img.src = src;
     }
+
+    // Cleanup function
+    return () => {
+      if (imageLoadRef.current) {
+        // Clear event handlers to prevent memory leaks
+        imageLoadRef.current.onload = null;
+        imageLoadRef.current.onerror = null;
+        imageLoadRef.current = null;
+      }
+    };
   }, [isIntersecting, src, onLoad, onError]);
 
   const containerStyle: React.CSSProperties = {
@@ -98,16 +117,11 @@ const LazyImage: React.FC<LazyImageProps> = ({
           <Spin />
         </div>
       )}
-      
+
       {isIntersecting && !hasError && (
-        <img
-          src={imageSrc}
-          alt={alt}
-          style={imageStyle}
-          loading="lazy"
-        />
+        <img src={imageSrc} alt={alt} style={imageStyle} loading="lazy" />
       )}
-      
+
       {hasError && (
         <div
           style={{

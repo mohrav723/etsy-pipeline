@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useMemo } from 'react';
 import { ConfigProvider, Layout, Typography, Tabs, Empty, Card, Spin } from 'antd';
 import { GenerationProvider, useGeneration } from './context/GenerationContext';
 import {
@@ -8,9 +8,10 @@ import {
   DollarCircleOutlined,
   FileImageOutlined,
 } from '@ant-design/icons';
-import ArtReviewCard, { Job } from './components/artReviewCard';
+import ArtReviewCard from './components/artReviewCard';
 import ControlPanel from './components/controlPanel';
 import ErrorBoundary from './components/ErrorBoundary';
+import { Job } from './types';
 import { db } from './firebase';
 import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
 import { antdDarkTheme } from './theme/antdTheme';
@@ -80,126 +81,129 @@ function AppContent() {
     document.body.style.color = '#e0e0e0';
   }, []);
 
-  const tabItems = [
-    {
-      key: 'review',
-      label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <PictureOutlined />
-          Review ({reviewJobs.length})
-        </span>
-      ),
-      children: (
-        <>
-          {isGenerating && (
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '400px',
-                marginBottom: '16px',
-              }}
-            >
-              <Card style={{ width: '100%', textAlign: 'center' }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '16px',
-                    padding: '40px',
-                  }}
-                >
-                  <Spin size="large" />
-                  <Text style={{ color: '#b9bbbe', fontSize: '16px' }}>
-                    Generating your image...
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: '14px' }}>
-                    This may take a few moments
-                  </Text>
-                </div>
-              </Card>
-            </div>
-          )}
+  const tabItems = useMemo(
+    () => [
+      {
+        key: 'review',
+        label: (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <PictureOutlined />
+            Review ({reviewJobs.length})
+          </span>
+        ),
+        children: (
+          <>
+            {isGenerating && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '400px',
+                  marginBottom: '16px',
+                }}
+              >
+                <Card style={{ width: '100%', textAlign: 'center' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '16px',
+                      padding: '40px',
+                    }}
+                  >
+                    <Spin size="large" />
+                    <Text style={{ color: '#b9bbbe', fontSize: '16px' }}>
+                      Generating your image...
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: '14px' }}>
+                      This may take a few moments
+                    </Text>
+                  </div>
+                </Card>
+              </div>
+            )}
 
-          {reviewJobs.length > 0 ? (
-            <div
-              style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '4px 0' }}
-            >
-              {reviewJobs.map((job) => (
-                <ErrorBoundary key={job.id}>
-                  <ArtReviewCard job={job} />
-                </ErrorBoundary>
-              ))}
-            </div>
-          ) : !isGenerating ? (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="No images are currently waiting for review. Use the form on the left to generate new art."
-              style={{ color: '#99aab5' }}
-            />
-          ) : null}
-        </>
-      ),
-    },
-    {
-      key: 'history',
-      label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <HistoryOutlined />
-          History
-        </span>
-      ),
-      children: (
-        <Suspense fallback={<TabLoading />}>
-          <HistoryTab />
-        </Suspense>
-      ),
-    },
-    {
-      key: 'mockups',
-      label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <MobileOutlined />
-          Mockups
-        </span>
-      ),
-      children: (
-        <Suspense fallback={<TabLoading />}>
-          <MockupTab />
-        </Suspense>
-      ),
-    },
-    {
-      key: 'drafts',
-      label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <FileImageOutlined />
-          Drafts
-        </span>
-      ),
-      children: (
-        <Suspense fallback={<TabLoading />}>
-          <DraftsTab />
-        </Suspense>
-      ),
-    },
-    {
-      key: 'costs',
-      label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <DollarCircleOutlined />
-          Costs
-        </span>
-      ),
-      children: (
-        <Suspense fallback={<TabLoading />}>
-          <CostMonitoring />
-        </Suspense>
-      ),
-    },
-  ];
+            {reviewJobs.length > 0 ? (
+              <div
+                style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '4px 0' }}
+              >
+                {reviewJobs.map((job) => (
+                  <ErrorBoundary key={job.id}>
+                    <ArtReviewCard job={job} />
+                  </ErrorBoundary>
+                ))}
+              </div>
+            ) : !isGenerating ? (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="No images are currently waiting for review. Use the form on the left to generate new art."
+                style={{ color: '#99aab5' }}
+              />
+            ) : null}
+          </>
+        ),
+      },
+      {
+        key: 'history',
+        label: (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <HistoryOutlined />
+            History
+          </span>
+        ),
+        children: (
+          <Suspense fallback={<TabLoading />}>
+            <HistoryTab />
+          </Suspense>
+        ),
+      },
+      {
+        key: 'mockups',
+        label: (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <MobileOutlined />
+            Mockups
+          </span>
+        ),
+        children: (
+          <Suspense fallback={<TabLoading />}>
+            <MockupTab />
+          </Suspense>
+        ),
+      },
+      {
+        key: 'drafts',
+        label: (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FileImageOutlined />
+            Drafts
+          </span>
+        ),
+        children: (
+          <Suspense fallback={<TabLoading />}>
+            <DraftsTab />
+          </Suspense>
+        ),
+      },
+      {
+        key: 'costs',
+        label: (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <DollarCircleOutlined />
+            Costs
+          </span>
+        ),
+        children: (
+          <Suspense fallback={<TabLoading />}>
+            <CostMonitoring />
+          </Suspense>
+        ),
+      },
+    ],
+    [reviewJobs, isGenerating]
+  );
 
   return (
     <ConfigProvider theme={antdDarkTheme}>
