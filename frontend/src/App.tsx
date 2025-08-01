@@ -5,7 +5,6 @@ import {
   PictureOutlined,
   HistoryOutlined,
   MobileOutlined,
-  DollarCircleOutlined,
   FileImageOutlined,
 } from '@ant-design/icons';
 import ArtReviewCard from './components/artReviewCard';
@@ -21,7 +20,6 @@ import 'antd/dist/reset.css';
 const HistoryTab = lazy(() => import('./components/historyTab'));
 const MockupTab = lazy(() => import('./components/MockupTab'));
 const DraftsTab = lazy(() => import('./components/DraftsTab'));
-const CostMonitoring = lazy(() => import('./components/CostMonitoring'));
 
 const { Header, Content, Sider } = Layout;
 const { Title, Text } = Typography;
@@ -43,7 +41,7 @@ const TabLoading = () => (
 function AppContent() {
   const { isGenerating, setIsGenerating } = useGeneration();
   const [reviewJobs, setReviewJobs] = useState<Job[]>([]);
-  const [activeTab, setActiveTab] = useState<'review' | 'history' | 'mockups' | 'drafts' | 'costs'>(
+  const [activeTab, setActiveTab] = useState<'review' | 'history' | 'mockups' | 'drafts'>(
     'review'
   );
 
@@ -187,20 +185,6 @@ function AppContent() {
           </Suspense>
         ),
       },
-      {
-        key: 'costs',
-        label: (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <DollarCircleOutlined />
-            Costs
-          </span>
-        ),
-        children: (
-          <Suspense fallback={<TabLoading />}>
-            <CostMonitoring />
-          </Suspense>
-        ),
-      },
     ],
     [reviewJobs, isGenerating]
   );
@@ -264,7 +248,7 @@ function AppContent() {
                 <Tabs
                   activeKey={activeTab}
                   onChange={(key) =>
-                    setActiveTab(key as 'review' | 'history' | 'mockups' | 'drafts' | 'costs')
+                    setActiveTab(key as 'review' | 'history' | 'mockups' | 'drafts')
                   }
                   items={tabItems}
                   size="large"

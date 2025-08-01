@@ -25,7 +25,7 @@ fi
 
 # Start Temporal server
 echo "1️⃣ Starting Temporal server..."
-/Users/mohitravindran/.temporalio/bin/temporal server start-dev --port 7233 --ui-port 8088 > temporal_server.log 2>&1 &
+/Users/mohitravindran/.temporalio/bin/temporal server start-dev --port 7233 --ui-port 8088 > backend/logs/temporal_server.log 2>&1 &
 TEMPORAL_PID=$!
 
 # Wait for Temporal to be ready
@@ -62,7 +62,7 @@ echo "🌐 Frontend:    http://localhost:5173"
 echo "📊 Temporal UI: http://localhost:8088"
 echo ""
 echo "📝 Logs are being written to:"
-echo "   - temporal_server.log"
+echo "   - backend/logs/temporal_server.log"
 echo "   - backend/logs/temporal_worker.log"
 echo "   - backend/logs/temporal_job_starter.log"
 echo "   - frontend/frontend.log"

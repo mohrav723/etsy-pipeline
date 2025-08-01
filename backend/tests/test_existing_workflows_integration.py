@@ -19,7 +19,6 @@ if backend_path not in sys.path:
 
 from src.temporal.simple_workflow import SimpleImageWorkflow
 from src.storage import upload_image_to_storage
-from src.cost_tracker import CostTracker
 
 
 class TestExistingWorkflowsIntegration:
@@ -69,28 +68,6 @@ class TestExistingWorkflowsIntegration:
             except Exception as e:
                 pytest.fail(f"Storage service failed: {e}")
     
-    def test_cost_tracker_unchanged(self):
-        """Test that cost tracking functionality remains intact."""
-        try:
-            cost_tracker = CostTracker()
-            
-            # Test cost tracking methods still work
-            storage_cost = cost_tracker.log_storage_cost(
-                job_id="test_job",
-                image_size_bytes=1024,
-                operation_type="test_upload"
-            )
-            assert isinstance(storage_cost, (int, float))
-            
-            bfl_cost = cost_tracker.log_bfl_cost(
-                job_id="test_job",
-                model="flux_dev",
-                steps=28
-            )
-            assert isinstance(bfl_cost, (int, float))
-            
-        except Exception as e:
-            pytest.fail(f"Cost tracker failed: {e}")
     
     @patch('google.cloud.firestore.Client')
     def test_simple_workflow_structure_unchanged(self, mock_firestore):

@@ -157,8 +157,7 @@ class TestIntelligentMockupActivities:
         mock_requests.assert_any_call(self.test_template_url, timeout=30)
     
     @patch('src.services.object_detection.ObjectDetectionService')
-    @patch('src.cost_tracker.CostTracker')
-    def test_detect_suitable_regions(self, mock_cost_tracker_class, mock_detection_service_class):
+    def test_detect_suitable_regions(self, mock_detection_service_class):
         """Test detecting suitable regions in template."""
         # Mock object detection service
         mock_detection_service = Mock()
@@ -168,11 +167,6 @@ class TestIntelligentMockupActivities:
         from src.services.object_detection import BoundingBox
         mock_region = BoundingBox(100, 100, 200, 150, 0.9, "picture frame")
         mock_detection_service.find_suitable_regions.return_value = [mock_region]
-        
-        # Mock cost tracker
-        mock_cost_tracker = Mock()
-        mock_cost_tracker_class.return_value = mock_cost_tracker
-        mock_cost_tracker.log_storage_cost.return_value = 0.001
         
         # Test the activity
         result = asyncio.run(detect_suitable_regions(self.template_bytes, self.test_job_id))
@@ -188,11 +182,9 @@ class TestIntelligentMockupActivities:
         
         # Verify service calls
         mock_detection_service.find_suitable_regions.assert_called_once()
-        mock_cost_tracker.log_storage_cost.assert_called_once()
     
     @patch('src.services.perspective_transform.PerspectiveTransformService')
-    @patch('src.cost_tracker.CostTracker')
-    def test_transform_artwork_to_region(self, mock_cost_tracker_class, mock_transform_service_class):
+    def test_transform_artwork_to_region(self, mock_transform_service_class):
         """Test transforming artwork to fit region."""
         # Mock perspective transformation service
         mock_transform_service = Mock()
@@ -211,11 +203,6 @@ class TestIntelligentMockupActivities:
         )
         mock_transform_service.transform_artwork_to_region.return_value = mock_result
         
-        # Mock cost tracker
-        mock_cost_tracker = Mock()
-        mock_cost_tracker_class.return_value = mock_cost_tracker
-        mock_cost_tracker.log_storage_cost.return_value = 0.001
-        
         # Test the activity
         result = asyncio.run(transform_artwork_to_region(
             self.artwork_bytes,
@@ -230,7 +217,6 @@ class TestIntelligentMockupActivities:
         
         # Verify service calls
         mock_transform_service.transform_artwork_to_region.assert_called_once()
-        mock_cost_tracker.log_storage_cost.assert_called_once()
     
     @patch('src.services.perspective_transform.PerspectiveTransformService')
     def test_compose_and_store_final_mockup(self, mock_transform_service_class):
@@ -263,9 +249,8 @@ class TestIntelligentMockupActivities:
         mock_transform_service.create_composite_image.assert_called_once()
     
     @patch('google.cloud.storage')
-    @patch('src.cost_tracker.CostTracker')
     @patch('os.getenv')
-    def test_store_intelligent_mockup_result(self, mock_getenv, mock_cost_tracker_class, mock_storage):
+    def test_store_intelligent_mockup_result(self, mock_getenv, mock_storage):
         """Test storing mockup result in Firebase Storage."""
         # Mock environment variable
         mock_getenv.return_value = "test-bucket"
@@ -280,11 +265,6 @@ class TestIntelligentMockupActivities:
         mock_storage_client.bucket.return_value = mock_bucket
         mock_bucket.blob.return_value = mock_blob
         
-        # Mock cost tracker
-        mock_cost_tracker = Mock()
-        mock_cost_tracker_class.return_value = mock_cost_tracker
-        mock_cost_tracker.log_storage_cost.return_value = 0.001
-        
         # Test the activity
         result = asyncio.run(store_intelligent_mockup_result(
             self.template_bytes,
@@ -298,7 +278,6 @@ class TestIntelligentMockupActivities:
         mock_storage_client.bucket.assert_called_with("test-bucket")
         mock_blob.upload_from_string.assert_called_once()
         mock_blob.make_public.assert_called_once()
-        mock_cost_tracker.log_storage_cost.assert_called_once()
 
 class TestIntelligentMockupWorkflow:
     """Tests for the complete workflow."""
@@ -452,17 +431,14 @@ class TestWorkflowIntegration:
             # Import services used by intelligent mockup workflow
             from src.services.object_detection import ObjectDetectionService
             from src.services.perspective_transform import PerspectiveTransformService
-            from src.cost_tracker import CostTracker
             from src.storage import upload_image_to_storage
             
             # Verify services can be instantiated
             detection_service = ObjectDetectionService()
             transform_service = PerspectiveTransformService()
-            cost_tracker = CostTracker()
             
             assert detection_service is not None
             assert transform_service is not None
-            assert cost_tracker is not None
             assert callable(upload_image_to_storage)
             
         except ImportError as e:
@@ -474,7 +450,6 @@ class TestWorkflowIntegration:
             'jobs',                      # Simple workflow
             'mockup_jobs',              # Mockup generation workflow
             'intelligent_mockup_jobs',  # Intelligent mockup workflow
-            'costs',                    # Cost tracking
             'mockups',                  # Mockup templates
             'drafts'                    # Draft entries
         ]

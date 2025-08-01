@@ -117,10 +117,8 @@ async def download_and_process_images(artwork_url: str, mockup_template: str, jo
         sys.path.insert(0, backend_path)
     
     from src.services.object_detection import NoSuitableRegionsError
-    from src.cost_tracker import CostTracker
     
     activity.logger.info(f"Processing images for job {job_id}")
-    cost_tracker = CostTracker()
     
     try:
         # Download artwork
@@ -206,14 +204,6 @@ async def download_and_process_images(artwork_url: str, mockup_template: str, jo
         template_blob.make_public()  # Make the blob publicly accessible
         temp_template_url = template_blob.public_url
         
-        # Log processing cost
-        processing_cost = cost_tracker.log_storage_cost(
-            job_id=job_id,
-            image_size_bytes=len(template_bytes),
-            operation_type='object_detection'
-        )
-        activity.logger.info(f"Object detection cost logged: ${processing_cost:.6f}")
-        
         return {
             'success': True,
             'temp_artwork_url': temp_artwork_url,
@@ -258,10 +248,8 @@ async def create_intelligent_mockup(
     
     from src.services.perspective_transform import PerspectiveTransformService
     from src.services.object_detection_optimized import BoundingBox
-    from src.cost_tracker import CostTracker
     
     activity.logger.info(f"Creating intelligent mockup for job {job_id}")
-    cost_tracker = CostTracker()
     
     try:
         # Download temporary images
@@ -318,14 +306,6 @@ async def create_intelligent_mockup(
         
         public_url = final_blob.public_url
         activity.logger.info(f"Upload complete. Public URL: {public_url}")
-        
-        # Log storage cost
-        storage_cost = cost_tracker.log_storage_cost(
-            job_id=job_id,
-            image_size_bytes=img_bytes.tell(),
-            operation_type='intelligent_mockup_upload'
-        )
-        activity.logger.info(f"Storage cost logged: ${storage_cost:.6f}")
         
         # Clean up temporary files
         try:
