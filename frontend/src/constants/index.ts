@@ -34,7 +34,6 @@ export const GENERATION_DEFAULTS = {
 
 // Timeouts
 export const REGENERATION_TIMEOUT_MS = 30000; // 30 seconds
-export const COST_REFRESH_INTERVAL_MS = 60000; // 1 minute
 
 // Slider ranges
 export const SLIDER_RANGES = {

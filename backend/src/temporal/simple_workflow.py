@@ -42,11 +42,9 @@ async def generate_and_store_image(job_data: Dict[str, Any]) -> str:
     # Import your existing services
     from src.services.bfl_api import generate_art_image
     from src.storage import upload_image_to_storage
-    from src.cost_tracker import CostTracker
     
     activity.logger.info(f"Generating image for job {job_data['job_id']}")
     
-    cost_tracker = CostTracker()
     job_id = job_data['job_id']
     
     try:
@@ -64,46 +62,14 @@ async def generate_and_store_image(job_data: Dict[str, Any]) -> str:
             safety_tolerance=job_data.get('safetyTolerance', 2)
         )
         
-        # Log BFL API cost
-        bfl_cost = cost_tracker.log_bfl_cost(
-            job_id=job_id,
-            model='flux_dev',  # Adjust based on your actual model
-            steps=steps,
-            success=True
-        )
-        activity.logger.info(f"BFL API cost logged: ${bfl_cost:.4f}")
-        
         # Use your existing upload function
         public_url = upload_image_to_storage(image_data)
         
-        # Log storage cost
-        storage_cost = cost_tracker.log_storage_cost(
-            job_id=job_id,
-            image_size_bytes=len(image_data),
-            operation_type='upload'
-        )
-        activity.logger.info(f"Storage cost logged: ${storage_cost:.6f}")
-        
-        total_cost = bfl_cost + storage_cost
-        activity.logger.info(f"Total cost for job {job_id}: ${total_cost:.4f}")
         activity.logger.info(f"Image uploaded successfully: {public_url}")
         return public_url
         
     except Exception as e:
         activity.logger.error(f"Failed to generate/upload image: {str(e)}")
-        
-        # Log failed BFL cost
-        try:
-            cost_tracker.log_bfl_cost(
-                job_id=job_id,
-                model='flux_dev',
-                steps=job_data.get('steps', 28),
-                success=False,
-                error_message=str(e)
-            )
-        except Exception as cost_error:
-            activity.logger.error(f"Failed to log cost for failed job: {cost_error}")
-        
         raise
 
 @activity.defn

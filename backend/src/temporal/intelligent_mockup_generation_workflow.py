@@ -142,11 +142,8 @@ async def detect_suitable_regions(template_bytes: bytes, job_id: str) -> List[Di
     
     from src.services.object_detection import NoSuitableRegionsError
     from src.services.opencv_detection.compatibility_wrapper import create_object_detection_service
-    from src.cost_tracker import CostTracker
     
     activity.logger.info(f"Starting object detection for job {job_id}")
-    
-    cost_tracker = CostTracker()
     
     try:
         # Convert bytes to PIL Image
@@ -172,14 +169,6 @@ async def detect_suitable_regions(template_bytes: bytes, job_id: str) -> List[Di
                 f"Region: {region.label} at ({region.x}, {region.y}) "
                 f"size {region.width}x{region.height} confidence {region.confidence:.3f}"
             )
-        
-        # Log processing cost (estimate based on image size and processing time)
-        processing_cost = cost_tracker.log_storage_cost(
-            job_id=job_id,
-            image_size_bytes=len(template_bytes),
-            operation_type='object_detection'
-        )
-        activity.logger.info(f"Object detection cost logged: ${processing_cost:.6f}")
         
         return regions_data
         
@@ -214,11 +203,8 @@ async def transform_artwork_to_region(
     
     from src.services.perspective_transform import PerspectiveTransformService
     from src.services.object_detection import BoundingBox
-    from src.cost_tracker import CostTracker
     
     activity.logger.info(f"Starting perspective transformation for job {job_id}")
-    
-    cost_tracker = CostTracker()
     
     try:
         # Convert bytes to PIL Image
@@ -251,14 +237,6 @@ async def transform_artwork_to_region(
         img_bytes = io.BytesIO()
         result.transformed_image.save(img_bytes, format='PNG')
         transformed_bytes = img_bytes.getvalue()
-        
-        # Log processing cost
-        processing_cost = cost_tracker.log_storage_cost(
-            job_id=job_id,
-            image_size_bytes=len(transformed_bytes),
-            operation_type='perspective_transform'
-        )
-        activity.logger.info(f"Perspective transformation cost logged: ${processing_cost:.6f}")
         
         return transformed_bytes
         
@@ -293,7 +271,6 @@ async def compose_and_store_final_mockup(
     
     from src.services.perspective_transform import PerspectiveTransformService
     from src.services.object_detection import BoundingBox
-    from src.cost_tracker import CostTracker
     
     activity.logger.info(f"Composing and storing final mockup for job {job_id}")
     
@@ -349,14 +326,6 @@ async def compose_and_store_final_mockup(
         public_url = blob.public_url
         activity.logger.info(f"Upload complete. Public URL: {public_url}")
         
-        # Log storage cost
-        storage_cost = cost_tracker.log_storage_cost(
-            job_id=job_id,
-            image_size_bytes=len(composite_bytes),
-            operation_type='intelligent_mockup_upload'
-        )
-        activity.logger.info(f"Storage cost logged: ${storage_cost:.6f}")
-        
         return public_url
         
     except Exception as e:
@@ -404,14 +373,6 @@ async def store_intelligent_mockup_result(mockup_bytes: bytes, job_id: str) -> s
         
         public_url = blob.public_url
         activity.logger.info(f"Upload complete. Public URL: {public_url}")
-        
-        # Log storage cost
-        storage_cost = cost_tracker.log_storage_cost(
-            job_id=job_id,
-            image_size_bytes=len(mockup_bytes),
-            operation_type='intelligent_mockup_upload'
-        )
-        activity.logger.info(f"Storage cost logged: ${storage_cost:.6f}")
         
         return public_url
         

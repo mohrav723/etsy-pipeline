@@ -102,22 +102,6 @@ export interface DetectedRegion {
   bbox: [number, number, number, number]; // [x1, y1, x2, y2]
 }
 
-// Cost tracking types
-export interface Cost {
-  id: string;
-  jobId: string;
-  costType: 'bfl_generation' | 'storage_upload' | 'object_detection' | 'perspective_transform';
-  amount: number;
-  timestamp: Timestamp;
-  details: {
-    model?: string;
-    steps?: number;
-    success?: boolean;
-    sizeBytes?: number;
-    operation?: string;
-  };
-}
-
 // Form types
 export interface GenerationFormValues {
   prompt: string;
