@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ConfigProvider, Layout, Typography, Tabs, Empty, Card, Spin } from 'antd';
 import { GenerationProvider, useGeneration } from './context/GenerationContext';
 import {
@@ -10,18 +10,34 @@ import {
 } from '@ant-design/icons';
 import ArtReviewCard, { Job } from './components/artReviewCard';
 import ControlPanel from './components/controlPanel';
-import HistoryTab from './components/historyTab';
-import MockupTab from './components/MockupTab';
-import DraftsTab from './components/DraftsTab';
-import CostMonitoring from './components/CostMonitoring';
 import ErrorBoundary from './components/ErrorBoundary';
 import { db } from './firebase';
 import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
 import { antdDarkTheme } from './theme/antdTheme';
 import 'antd/dist/reset.css';
 
+// Lazy load tabs for better performance
+const HistoryTab = lazy(() => import('./components/historyTab'));
+const MockupTab = lazy(() => import('./components/MockupTab'));
+const DraftsTab = lazy(() => import('./components/DraftsTab'));
+const CostMonitoring = lazy(() => import('./components/CostMonitoring'));
+
 const { Header, Content, Sider } = Layout;
 const { Title, Text } = Typography;
+
+// Loading component for lazy loaded tabs
+const TabLoading = () => (
+  <div
+    style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '400px',
+    }}
+  >
+    <Spin size="large" tip="Loading..." />
+  </div>
+);
 
 function AppContent() {
   const { isGenerating, setIsGenerating } = useGeneration();
@@ -135,7 +151,11 @@ function AppContent() {
           History
         </span>
       ),
-      children: <HistoryTab />,
+      children: (
+        <Suspense fallback={<TabLoading />}>
+          <HistoryTab />
+        </Suspense>
+      ),
     },
     {
       key: 'mockups',
@@ -145,7 +165,11 @@ function AppContent() {
           Mockups
         </span>
       ),
-      children: <MockupTab />,
+      children: (
+        <Suspense fallback={<TabLoading />}>
+          <MockupTab />
+        </Suspense>
+      ),
     },
     {
       key: 'drafts',
@@ -155,7 +179,11 @@ function AppContent() {
           Drafts
         </span>
       ),
-      children: <DraftsTab />,
+      children: (
+        <Suspense fallback={<TabLoading />}>
+          <DraftsTab />
+        </Suspense>
+      ),
     },
     {
       key: 'costs',
@@ -165,7 +193,11 @@ function AppContent() {
           Costs
         </span>
       ),
-      children: <CostMonitoring />,
+      children: (
+        <Suspense fallback={<TabLoading />}>
+          <CostMonitoring />
+        </Suspense>
+      ),
     },
   ];
 

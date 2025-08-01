@@ -15,10 +15,14 @@ if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
 from src.temporal.simple_workflow import SimpleImageWorkflow
-from src.temporal.intelligent_mockup_generation_workflow import IntelligentMockupGenerationWorkflow
+from src.temporal.intelligent_mockup_generation_workflow_optimized import IntelligentMockupGenerationWorkflow
+from src.utils.logging_config import get_logger
 
 # Load environment variables like your current worker
 load_dotenv()
+
+# Get logger
+logger = get_logger('temporal_job_starter')
 
 class TemporalJobStarter:
     def __init__(self):

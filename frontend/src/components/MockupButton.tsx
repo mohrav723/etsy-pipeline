@@ -72,14 +72,6 @@ const MockupButton: React.FC<MockupButtonProps> = ({
         );
       }
 
-      // Debug logging
-      // console.log('Creating intelligent mockup job with:', {
-      //   jobId,
-      //   imageUrl,
-      //   prompt,
-      //   templateId: mockupsSnapshot.docs[0]?.id,
-      // });
-
       // Create intelligent mockup job
       const intelligentJobData = {
         status: INTELLIGENT_MOCKUP_STATUS.PENDING,
@@ -107,7 +99,7 @@ const MockupButton: React.FC<MockupButtonProps> = ({
       try {
         const jobRef = doc(db, 'jobs', jobId);
         await updateDoc(jobRef, { status: JOB_STATUS.APPROVED });
-      } catch (_approveError) {
+      } catch {
         // Don't fail the whole operation if approval fails
       }
 

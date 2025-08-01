@@ -1,5 +1,6 @@
 import { IntelligentMockupJob, IntelligentMockupErrorType } from '../types';
 import { INTELLIGENT_MOCKUP_ERRORS, INTELLIGENT_MOCKUP_TIMEOUTS } from '../constants';
+import { Timestamp, Firestore } from 'firebase/firestore';
 
 /**
  * Get user-friendly error message based on error type
@@ -61,9 +62,10 @@ export const getErrorSuggestedActions = (error?: IntelligentMockupJob['error']):
 export const hasJobTimedOut = (job: IntelligentMockupJob): boolean => {
   if (job.status !== 'processing' || !job.processingStartTime) return false;
 
-  const startTime = job.processingStartTime.toMillis
-    ? job.processingStartTime.toMillis()
-    : job.processingStartTime;
+  const startTime =
+    job.processingStartTime instanceof Timestamp
+      ? job.processingStartTime.toMillis()
+      : job.processingStartTime;
   const processingTime = Date.now() - startTime;
   return processingTime > INTELLIGENT_MOCKUP_TIMEOUTS.MAX_PROCESSING_TIME;
 };
@@ -71,11 +73,14 @@ export const hasJobTimedOut = (job: IntelligentMockupJob): boolean => {
 /**
  * Format processing time for display
  */
-export const formatProcessingTime = (startTime?: any, endTime?: any): string => {
+export const formatProcessingTime = (
+  startTime?: Timestamp | number,
+  endTime?: Timestamp | number
+): string => {
   if (!startTime) return '0s';
 
-  const start = startTime.toMillis ? startTime.toMillis() : startTime;
-  const end = endTime ? (endTime.toMillis ? endTime.toMillis() : endTime) : Date.now();
+  const start = startTime instanceof Timestamp ? startTime.toMillis() : startTime;
+  const end = endTime ? (endTime instanceof Timestamp ? endTime.toMillis() : endTime) : Date.now();
 
   const duration = end - start;
   const seconds = Math.floor(duration / 1000);
@@ -93,9 +98,10 @@ export const formatProcessingTime = (startTime?: any, endTime?: any): string => 
 export const getProcessingProgress = (job: IntelligentMockupJob): number => {
   if (job.status !== 'processing' || !job.processingStartTime) return 0;
 
-  const startTime = job.processingStartTime.toMillis
-    ? job.processingStartTime.toMillis()
-    : job.processingStartTime;
+  const startTime =
+    job.processingStartTime instanceof Timestamp
+      ? job.processingStartTime.toMillis()
+      : job.processingStartTime;
   const elapsed = Date.now() - startTime;
   const expectedDuration = 120000; // 2 minutes expected
 
@@ -107,7 +113,7 @@ export const getProcessingProgress = (job: IntelligentMockupJob): number => {
  * Validate mockup template availability
  */
 export const validateMockupTemplates = async (
-  db: any
+  db: Firestore
 ): Promise<{
   hasTemplates: boolean;
   templateCount: number;
@@ -122,7 +128,7 @@ export const validateMockupTemplates = async (
       hasTemplates: !snapshot.empty,
       templateCount: snapshot.size,
     };
-  } catch (_error) {
+  } catch {
     return {
       hasTemplates: false,
       templateCount: 0,

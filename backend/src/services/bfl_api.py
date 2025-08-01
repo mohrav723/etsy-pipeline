@@ -25,7 +25,7 @@ def generate_art_image(
     """
     print("--- Starting image generation with custom parameters...")
     
-    start_url = "https://api.bfl.ai/v1/flux-dev"
+    start_url = "https://api.bfl.ai/v1/flux-pro-1.1"
     headers = {"x-key": BFL_API_KEY, "Content-Type": "application/json"}
     
     sizes = {"16:9": (1344, 768), "1:1": (1024, 1024), "9:16": (768, 1344)}

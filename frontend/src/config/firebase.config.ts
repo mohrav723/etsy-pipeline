@@ -22,7 +22,7 @@ interface ValidationError {
  */
 function validateFirebaseConfig(): { config: FirebaseConfig | null; errors: ValidationError[] } {
   const errors: ValidationError[] = [];
-  
+
   const requiredFields = [
     'VITE_FIREBASE_API_KEY',
     'VITE_FIREBASE_AUTH_DOMAIN',

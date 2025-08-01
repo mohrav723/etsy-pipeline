@@ -9,7 +9,7 @@ const { config: firebaseConfig, errors } = validateFirebaseConfig();
 
 if (errors.length > 0) {
   const errorMessage = errors.map((e) => `${e.field}: ${e.message}`).join('\n');
-  
+
   // In development, show detailed error
   if (import.meta.env.MODE === 'development') {
     console.error('Firebase configuration errors:\n', errorMessage);
