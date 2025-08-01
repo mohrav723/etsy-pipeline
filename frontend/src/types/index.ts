@@ -1,5 +1,14 @@
 import { Timestamp } from 'firebase/firestore';
 
+// Error details interface
+export interface ErrorDetails {
+  code?: string;
+  timestamp?: string | number;
+  context?: Record<string, unknown>;
+  stack?: string;
+  [key: string]: unknown;
+}
+
 // Job-related types
 export type JobStatus =
   | 'pending_art_generation'
@@ -28,6 +37,11 @@ export interface Job {
   createdAt: Timestamp;
   approved?: boolean;
   approvedAt?: Timestamp;
+  // Generation parameters
+  aspectRatio?: string;
+  safetyTolerance?: number;
+  promptUpsampling?: boolean;
+  originalJobId?: string; // Reference to the job this was regenerated from
 }
 
 export interface Mockup {
@@ -56,7 +70,7 @@ export interface IntelligentMockupJob {
   error?: {
     message: string;
     type: IntelligentMockupErrorType;
-    details?: any;
+    details?: ErrorDetails;
   } | null;
   error_message?: string | null; // Backend uses error_message
   result_url?: string | null; // Backend uses result_url
@@ -125,12 +139,15 @@ export interface AppError {
 }
 
 // Type guards
-export const isIntelligentMockupJob = (job: any): job is IntelligentMockupJob => {
+export const isIntelligentMockupJob = (job: unknown): job is IntelligentMockupJob => {
+  if (!job || typeof job !== 'object') return false;
+
+  const jobObj = job as Record<string, unknown>;
+
   return (
-    job &&
-    typeof job.status === 'string' &&
-    ['pending', 'processing', 'completed', 'failed', 'retried'].includes(job.status) &&
-    (job.original_job_id || job.sourceJobId) &&
-    (job.artwork_url || job.sourceImageUrl)
+    typeof jobObj.status === 'string' &&
+    ['pending', 'processing', 'completed', 'failed', 'retried'].includes(jobObj.status) &&
+    (jobObj.original_job_id || jobObj.sourceJobId) &&
+    (jobObj.artwork_url || jobObj.sourceImageUrl)
   );
 };

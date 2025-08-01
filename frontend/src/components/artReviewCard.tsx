@@ -21,24 +21,10 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import MockupButton from './MockupButton';
 import { REGENERATION_TIMEOUT_MS, SLIDER_RANGES, ASPECT_RATIOS, JOB_STATUS } from '../constants';
 import { ErrorService } from '../services/errorService';
+import { Job } from '../types';
 
 const { Text } = Typography;
 const { TextArea } = Input;
-
-// Export the Job type so other components can use it
-export type Job = {
-  id: string;
-  generatedImageUrl: string;
-  prompt: string;
-  model: string;
-  aspectRatio: string;
-  steps: number;
-  guidance: number;
-  safetyTolerance: number;
-  seed: number;
-  promptUpsampling: boolean;
-  originalJobId?: string; // Optional reference to the job this was regenerated from
-};
 
 type ArtReviewCardProps = {
   job: Job;

@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { Job } from '../types';
 import MockupButton from './MockupButton';
+import LazyImage from './LazyImage';
 import { JOBS_PER_PAGE, IMAGE_PREVIEW_HEIGHT, MODAL_IMAGE_MAX_HEIGHT } from '../constants';
 
 const { Title, Text } = Typography;
@@ -51,7 +52,7 @@ const HistoryTab = () => {
         }
       });
       setTotalJobs(count);
-    } catch (_error) {
+    } catch {
       // Error fetching total count
     }
   };
@@ -98,7 +99,7 @@ const HistoryTab = () => {
       if (lastDoc) {
         setPageSnapshots((prev) => ({ ...prev, [page]: lastDoc }));
       }
-    } catch (_error) {
+    } catch {
       // Error fetching jobs
     } finally {
       setLoading(false);
@@ -238,21 +239,25 @@ const HistoryTab = () => {
                       <Card
                         hoverable
                         cover={
-                          <div style={{ height: IMAGE_PREVIEW_HEIGHT, overflow: 'hidden' }}>
-                            <img
-                              src={job.generatedImageUrl}
+                          <div
+                            style={{
+                              height: IMAGE_PREVIEW_HEIGHT,
+                              overflow: 'hidden',
+                              transition: 'transform 0.3s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                            }}
+                          >
+                            <LazyImage
+                              src={job.generatedImageUrl || ''}
                               alt="Generated art"
                               style={{
-                                width: '100%',
                                 height: '100%',
-                                objectFit: 'cover',
-                                transition: 'transform 0.3s ease',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'scale(1.05)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'scale(1)';
+                                width: '100%',
                               }}
                             />
                           </div>
@@ -314,8 +319,8 @@ const HistoryTab = () => {
         {selectedJob && (
           <div>
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <img
-                src={selectedJob.generatedImageUrl}
+              <LazyImage
+                src={selectedJob.generatedImageUrl || ''}
                 alt="Generated art"
                 style={{
                   maxWidth: '100%',

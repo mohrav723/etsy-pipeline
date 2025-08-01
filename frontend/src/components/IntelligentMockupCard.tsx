@@ -319,10 +319,7 @@ const IntelligentMockupCard: React.FC<IntelligentMockupCardProps> = ({ job, onRe
                       icon={<DownloadOutlined />}
                       onClick={async () => {
                         try {
-                          await download(
-                            job.result_url!,
-                            `intelligent-mockup-${job.id}.png`
-                          );
+                          await download(job.result_url!, `intelligent-mockup-${job.id}.png`);
                         } catch (error) {
                           console.error('Download failed:', error);
                         }
