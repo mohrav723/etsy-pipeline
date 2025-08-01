@@ -26,7 +26,10 @@ class PerspectiveTransformConfig:
         quality_factor: float = 1.0,
         padding_ratio: float = 0.05,
         min_region_size: int = 50,
-        max_aspect_ratio_diff: float = 3.0
+        max_aspect_ratio_diff: float = 3.0,
+        enable_perspective: bool = False,  # Toggle perspective distortion
+        perspective_factor: float = 0.05,  # Amount of perspective distortion (0-0.1)
+        fit_mode: str = "contain"  # "contain" or "fill"
     ):
         self.interpolation_method = interpolation_method
         self.border_mode = border_mode
@@ -34,6 +37,9 @@ class PerspectiveTransformConfig:
         self.padding_ratio = padding_ratio    # Padding around detected region
         self.min_region_size = min_region_size  # Minimum size in pixels
         self.max_aspect_ratio_diff = max_aspect_ratio_diff  # Max aspect ratio difference
+        self.enable_perspective = enable_perspective  # Enable/disable perspective effect
+        self.perspective_factor = max(0, min(0.1, perspective_factor))  # Clamp to 0-0.1
+        self.fit_mode = fit_mode  # How to fit artwork: "contain" or "fill"
 
 class TransformationResult:
     """Result of perspective transformation with metadata."""
@@ -152,14 +158,24 @@ class PerspectiveTransformService:
         """
         Calculate corner points for perspective transformation.
         
-        Creates a subtle perspective effect by slightly adjusting corners.
+        Creates a subtle perspective effect by slightly adjusting corners,
+        or returns straight corners if perspective is disabled.
         """
         x, y, w, h = target_region.x, target_region.y, target_region.width, target_region.height
         
-        # Add subtle perspective distortion (simulating viewing angle)
-        perspective_factor = 0.05  # 5% perspective distortion
+        if not self.config.enable_perspective:
+            # No perspective distortion - return straight rectangular corners
+            return [
+                (x, y),           # top-left
+                (x + w, y),       # top-right
+                (x + w, y + h),   # bottom-right
+                (x, y + h)        # bottom-left
+            ]
         
-        # Calculate corners with slight perspective
+        # Add perspective distortion (simulating viewing angle)
+        perspective_factor = self.config.perspective_factor
+        
+        # Calculate corners with perspective
         top_left = (x, y)
         top_right = (x + w - w * perspective_factor * 0.5, y + h * perspective_factor * 0.3)
         bottom_right = (x + w, y + h)
@@ -176,26 +192,36 @@ class PerspectiveTransformService:
         aw, ah = artwork.size
         tw, th = target_region.width, target_region.height
         
-        # Calculate scaling to fit artwork into target region
-        scale_w = tw / aw
-        scale_h = th / ah
-        scale = min(scale_w, scale_h)  # Maintain aspect ratio
-        
-        # Calculate centered position
-        scaled_w = aw * scale
-        scaled_h = ah * scale
-        
-        # Center the artwork in the available space
-        offset_x = (tw - scaled_w) / 2
-        offset_y = (th - scaled_h) / 2
-        
-        # Source corners (full artwork)
-        return [
-            (0, 0),           # top-left
-            (aw, 0),          # top-right  
-            (aw, ah),         # bottom-right
-            (0, ah)           # bottom-left
-        ]
+        if self.config.fit_mode == "fill":
+            # Fill mode: Crop artwork to fill entire region (may lose parts of image)
+            scale_w = tw / aw
+            scale_h = th / ah
+            scale = max(scale_w, scale_h)  # Use larger scale to fill
+            
+            # Calculate which part of the artwork to use
+            scaled_w = tw / scale
+            scaled_h = th / scale
+            
+            # Center crop
+            offset_x = (aw - scaled_w) / 2
+            offset_y = (ah - scaled_h) / 2
+            
+            # Source corners (cropped portion of artwork)
+            return [
+                (offset_x, offset_y),                              # top-left
+                (offset_x + scaled_w, offset_y),                  # top-right  
+                (offset_x + scaled_w, offset_y + scaled_h),       # bottom-right
+                (offset_x, offset_y + scaled_h)                   # bottom-left
+            ]
+        else:
+            # Contain mode (default): Fit entire artwork within region (may have letterboxing)
+            # Source corners (full artwork)
+            return [
+                (0, 0),           # top-left
+                (aw, 0),          # top-right  
+                (aw, ah),         # bottom-right
+                (0, ah)           # bottom-left
+            ]
     
     def _calculate_transformation_matrix(
         self,
@@ -239,19 +265,70 @@ class PerspectiveTransformService:
             ])
             transform_matrix = scale_matrix @ transform_matrix
         
-        # Calculate output size (region size with padding)
-        padding = int(max(target_region.width, target_region.height) * self.config.padding_ratio)
-        output_width = int(target_region.width + 2 * padding)
-        output_height = int(target_region.height + 2 * padding)
+        # Calculate output size based on mode
+        if self.config.enable_perspective or self.config.fit_mode == "fill":
+            # With perspective or fill mode, use padding
+            padding = int(max(target_region.width, target_region.height) * self.config.padding_ratio)
+            output_width = int(target_region.width + 2 * padding)
+            output_height = int(target_region.height + 2 * padding)
+        else:
+            # Contain mode without perspective - exact size
+            padding = 0
+            output_width = int(target_region.width)
+            output_height = int(target_region.height)
         
-        # Apply perspective transformation
-        transformed_cv = cv2.warpPerspective(
-            artwork_cv,
-            transform_matrix,
-            (output_width, output_height),
-            flags=self.config.interpolation_method,
-            borderMode=self.config.border_mode
-        )
+        # Apply transformation
+        if self.config.enable_perspective:
+            # Use perspective transformation
+            transformed_cv = cv2.warpPerspective(
+                artwork_cv,
+                transform_matrix,
+                (output_width, output_height),
+                flags=self.config.interpolation_method,
+                borderMode=self.config.border_mode
+            )
+        else:
+            # Use simple affine transformation for no distortion
+            # Calculate affine transformation matrix from first 3 corners
+            src_pts = np.array(self._calculate_source_corners(artwork, target_region)[:3], dtype=np.float32)
+            
+            if self.config.fit_mode == "contain":
+                # Calculate destination points for contain mode
+                aw, ah = artwork.size
+                scale_w = target_region.width / aw
+                scale_h = target_region.height / ah
+                scale = min(scale_w, scale_h)
+                
+                scaled_w = aw * scale
+                scaled_h = ah * scale
+                offset_x = (target_region.width - scaled_w) / 2
+                offset_y = (target_region.height - scaled_h) / 2
+                
+                dst_pts = np.array([
+                    [offset_x, offset_y],
+                    [offset_x + scaled_w, offset_y],
+                    [offset_x + scaled_w, offset_y + scaled_h]
+                ], dtype=np.float32)
+            else:
+                # Fill mode destination points
+                dst_pts = np.array([
+                    [0, 0],
+                    [output_width, 0],
+                    [output_width, output_height]
+                ], dtype=np.float32)
+            
+            # Get affine transformation matrix
+            affine_matrix = cv2.getAffineTransform(src_pts, dst_pts)
+            
+            # Apply affine transformation
+            transformed_cv = cv2.warpAffine(
+                artwork_cv,
+                affine_matrix,
+                (output_width, output_height),
+                flags=self.config.interpolation_method,
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=(255, 255, 255)  # White background for letterboxing
+            )
         
         # Convert back to PIL
         transformed_rgb = cv2.cvtColor(transformed_cv, cv2.COLOR_BGR2RGB)
@@ -283,9 +360,14 @@ class PerspectiveTransformService:
             composite = mockup_template.copy()
             
             # Calculate paste position (accounting for padding)
-            padding = int(max(target_region.width, target_region.height) * self.config.padding_ratio)
-            paste_x = int(target_region.x - padding)
-            paste_y = int(target_region.y - padding)
+            if self.config.enable_perspective or self.config.padding_ratio > 0:
+                padding = int(max(target_region.width, target_region.height) * self.config.padding_ratio)
+                paste_x = int(target_region.x - padding)
+                paste_y = int(target_region.y - padding)
+            else:
+                # No padding - paste at exact region position
+                paste_x = int(target_region.x)
+                paste_y = int(target_region.y)
             
             # Handle edge cases where paste position goes outside image bounds
             paste_x = max(0, paste_x)

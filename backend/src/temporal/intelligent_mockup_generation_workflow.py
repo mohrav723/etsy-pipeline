@@ -201,7 +201,7 @@ async def transform_artwork_to_region(
     if backend_path not in sys.path:
         sys.path.insert(0, backend_path)
     
-    from src.services.perspective_transform import PerspectiveTransformService
+    from src.services.perspective_transform import PerspectiveTransformService, PerspectiveTransformConfig
     from src.services.object_detection import BoundingBox
     
     activity.logger.info(f"Starting perspective transformation for job {job_id}")
@@ -221,8 +221,13 @@ async def transform_artwork_to_region(
             label=region_data['label']
         )
         
-        # Initialize perspective transformation service
-        transform_service = PerspectiveTransformService()
+        # Initialize perspective transformation service with no-distortion config
+        config = PerspectiveTransformConfig(
+            enable_perspective=False,  # Disable perspective distortion
+            fit_mode="fill",  # Fill entire frame (may crop edges)
+            padding_ratio=0.0  # No padding for clean fit
+        )
+        transform_service = PerspectiveTransformService(config)
         
         # Transform artwork to fit region
         result = transform_service.transform_artwork_to_region(
@@ -269,7 +274,7 @@ async def compose_and_store_final_mockup(
     if backend_path not in sys.path:
         sys.path.insert(0, backend_path)
     
-    from src.services.perspective_transform import PerspectiveTransformService
+    from src.services.perspective_transform import PerspectiveTransformService, PerspectiveTransformConfig
     from src.services.object_detection import BoundingBox
     
     activity.logger.info(f"Composing and storing final mockup for job {job_id}")

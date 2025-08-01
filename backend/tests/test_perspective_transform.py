@@ -84,7 +84,8 @@ class TestPerspectiveTransformService:
         self.test_artwork = Image.new('RGB', (200, 150), color='blue')
         self.test_region = BoundingBox(50, 50, 100, 75, 0.9, "picture frame")
         self.mockup_size = (800, 600)
-        self.config = PerspectiveTransformConfig()
+        # Use perspective-enabled config for backward compatibility with existing tests
+        self.config = PerspectiveTransformConfig(enable_perspective=True)
         self.service = PerspectiveTransformService(self.config)
     
     def test_initialization(self):
